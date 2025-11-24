@@ -15,7 +15,7 @@ public class FishyGame extends JPanel implements KeyListener {
     public FishyGame() {
         try {
             // Load your PNG background image.
-            background = ImageIO.read(new File("background.png"));
+            background = ImageIO.read(new File("/res/background.png"));
         } catch (IOException e) {
             System.out.println("Background could not be loaded!");
         }
@@ -36,16 +36,16 @@ public class FishyGame extends JPanel implements KeyListener {
     @Override
     public void keyPressed(KeyEvent e) {
         switch (e.getKeyCode()) {
-            case KeyEvent.VK_LEFT:
+            case KeyEvent.VK_LEFT, KeyEvent.VK_A:
                 playerX = Math.max(playerX - MOVE_AMOUNT, 0);
                 break;
-            case KeyEvent.VK_RIGHT:
+            case KeyEvent.VK_RIGHT, KeyEvent.VK_D:
                 playerX = Math.min(playerX + MOVE_AMOUNT, getWidth() - PLAYER_SIZE);
                 break;
-            case KeyEvent.VK_UP:
+            case KeyEvent.VK_UP, KeyEvent.VK_W:
                 playerY = Math.max(playerY - MOVE_AMOUNT, 0);
                 break;
-            case KeyEvent.VK_DOWN:
+            case KeyEvent.VK_DOWN, KeyEvent.VK_S:
                 playerY = Math.min(playerY + MOVE_AMOUNT, getHeight() - PLAYER_SIZE);
                 break;
         }
@@ -53,7 +53,8 @@ public class FishyGame extends JPanel implements KeyListener {
     }
 
     @Override public void keyTyped(KeyEvent e) {}
-    @Override public void keyReleased(KeyEvent e) {}
+    @Override public void keyReleased(KeyEvent e) {
+    }
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("Fishy Game");
