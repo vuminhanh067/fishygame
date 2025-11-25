@@ -2,19 +2,21 @@ package enity;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-
 import javax.imageio.ImageIO;
-
 import main.GamePanel;
 import main.KeyHandler;
+import main.MouseHandler; // Import MouseHandler
 
 public class Player extends Enity {
     GamePanel gp;
     KeyHandler keyH;
+    MouseHandler mouseH; // Khai báo biến
 
-    public Player(GamePanel gp, KeyHandler keyH) {
+    // Constructor nhận thêm MouseHandler
+    public Player(GamePanel gp, KeyHandler keyH, MouseHandler mouseH) {
         this.gp = gp;
         this.keyH = keyH;
+        this.mouseH = mouseH; // Gán giá trị
         setDefaultValues();
         getPlayerImage();
     }
@@ -22,84 +24,86 @@ public class Player extends Enity {
     public void setDefaultValues() {
         x = gp.screenWidth / 2 - gp.tileSize / 2;
         y = gp.screenHeight / 2 - gp.tileSize / 2;
-        speed = 7;
+        speed = 4; // Tốc độ di chuyển (dùng cho bàn phím hoặc interpolation nếu cần)
         direction = "down";
     }
+
     public void getPlayerImage() {
         try {
-            up1 =ImageIO.read(getClass().getResourceAsStream("/res/eat1.png"));
-            up2 =ImageIO.read(getClass().getResourceAsStream("/res/eat2.png"));
-            down1 =ImageIO.read(getClass().getResourceAsStream("/res/eat3.png"));
-            down2 =ImageIO.read(getClass().getResourceAsStream("/res/eat4.png"));
-            left1 =ImageIO.read(getClass().getResourceAsStream("/res/eat5.png"));
-            left2 =ImageIO.read(getClass().getResourceAsStream("/res/eat6.png"));
-            right1 =ImageIO.read(getClass().getResourceAsStream("/res/eat7.png"));
-            right2 =ImageIO.read(getClass().getResourceAsStream("/res/eat8.png"));
+            // (Giữ nguyên code load ảnh của bạn)
+            up1 = ImageIO.read(getClass().getResourceAsStream("/res/eat1.png"));
+            up2 = ImageIO.read(getClass().getResourceAsStream("/res/eat2.png"));
+            down1 = ImageIO.read(getClass().getResourceAsStream("/res/eat3.png"));
+            down2 = ImageIO.read(getClass().getResourceAsStream("/res/eat4.png"));
+            left1 = ImageIO.read(getClass().getResourceAsStream("/res/eat5.png"));
+            left2 = ImageIO.read(getClass().getResourceAsStream("/res/eat6.png"));
+            right1 = ImageIO.read(getClass().getResourceAsStream("/res/eat7.png"));
+            right2 = ImageIO.read(getClass().getResourceAsStream("/res/eat8.png"));
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
     public void update() {
-        if (keyH.upPressed == true) {
-            direction = "up";
-            y = Math.max(0, y - speed);
+        // Lưu vị trí cũ để tính hướng di chuyển
+        int prevX = x;
+        int prevY = y;
+
+        // LOGIC DI CHUYỂN THEO CHUỘT
+        // Cập nhật x, y theo tọa độ chuột (căn giữa nhân vật)
+        // Kiểm tra xem chuột có nằm trong màn hình không (tránh bug khi khởi động)
+        if (mouseH.mouseX != 0 || mouseH.mouseY != 0) { 
+             x = mouseH.mouseX - gp.tileSize / 2;
+             y = mouseH.mouseY - gp.tileSize / 2;
         }
-        else if (keyH.downPressed == true) {
-            direction = "down";
-            y = Math.min(gp.screenHeight - gp.tileSize, y + speed);
+
+        // Giới hạn biên màn hình (Boundary Check)
+        if (x < 0) x = 0;
+        if (x > gp.screenWidth - gp.tileSize) x = gp.screenWidth - gp.tileSize;
+        if (y < 0) y = 0;
+        if (y > gp.screenHeight - gp.tileSize) y = gp.screenHeight - gp.tileSize;
+
+        // TÍNH TOÁN HƯỚNG (DIRECTION) ĐỂ VẼ SPRITE
+        int deltaX = x - prevX;
+        int deltaY = y - prevY;
+
+        // Ưu tiên hướng ngang hoặc dọc dựa trên độ lớn thay đổi
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            if (deltaX > 0) direction = "right";
+            else if (deltaX < 0) direction = "left";
+        } else {
+            if (deltaY > 0) direction = "down";
+            else if (deltaY < 0) direction = "up";
         }
-        else if (keyH.leftPressed == true) {
-            direction = "left";
-            x = Math.max(0, x - speed);
-        }
-        else if (keyH.rightPressed == true) {
-            direction = "right";
-            x = Math.min(gp.screenWidth - gp.tileSize, x + speed);
-        }
-        spriteCounter++; // vẽ lại hướng đi mỗi 10 frame
-        if (spriteCounter >10) {
-            if (spriteNum == 1) {
-                spriteNum = 2;
-            } else if (spriteNum == 2) {
-                spriteNum = 1;
+
+        // Chỉ cập nhật animation khi nhân vật thực sự di chuyển
+        if (deltaX != 0 || deltaY != 0) {
+            spriteCounter++;
+            if (spriteCounter > 10) {
+                if (spriteNum == 1) {
+                    spriteNum = 2;
+                } else if (spriteNum == 2) {
+                    spriteNum = 1;
+                }
+                spriteCounter = 0;
             }
-            spriteCounter = 0;   
         }
     }
+
     public void draw(Graphics2D g2) {
+        // (Giữ nguyên code draw của bạn)
         BufferedImage image = null;
-        if (direction == null) {
-            direction = "down";
-        }
+        if (direction == null) direction = "down";
+        
         switch(direction) {
             case "up":
-                if (spriteNum == 1) {
-                    image = up1;
-                } else {
-                    image = up2;
-                }
-                break;
+                image = (spriteNum == 1) ? up1 : up2; break;
             case "down":
-                if (spriteNum == 1) {
-                    image = down1;
-                } else {
-                    image = down2;
-                }
-                break;
+                image = (spriteNum == 1) ? down1 : down2; break;
             case "left":
-                if (spriteNum == 1) {
-                    image = left1;
-                } else {
-                    image = left2;
-                }
-                break;
+                image = (spriteNum == 1) ? left1 : left2; break;
             case "right":
-                if (spriteNum == 1) {
-                    image = right1;
-                } else {
-                    image = right2;
-                }
-                break;
+                image = (spriteNum == 1) ? right1 : right2; break;
         }
         if (image != null) {
             g2.drawImage(image, x, y, gp.tileSize, gp.tileSize, null);
