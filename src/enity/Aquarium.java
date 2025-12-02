@@ -36,11 +36,11 @@ public class Aquarium extends Entity {
             obj.direction = "left";
         }
         
-        obj.name = "Food"; // 70% là thức ăn
+        obj.name = "j";
         obj.speed = 5;
         if(obj.direction == "left") {
             try {
-                obj.up1 = ImageIO.read(getClass().getResourceAsStream("/res/eat1.png"));
+                obj.up1 = ImageIO.read(getClass().getResourceAsStream("/res/"+ obj.name +"1.png"));
             } catch (IOException e) {
                 System.out.println("Lỗi khi tải ảnh thức ăn!");
                 e.printStackTrace();
@@ -48,7 +48,7 @@ public class Aquarium extends Entity {
         } else
         {
             try {
-                obj.up1 = ImageIO.read(getClass().getResourceAsStream("/res/eat2.png"));
+                obj.up1 = ImageIO.read(getClass().getResourceAsStream("/res/"+ obj.name +"2.png"));
             } catch (IOException e) {
                 System.out.println("Lỗi khi tải ảnh thức ăn!");
                 e.printStackTrace();
@@ -86,7 +86,7 @@ public class Aquarium extends Entity {
         for (int i = 0; i < entities.size(); i++) {
             Entity e = entities.get(i);
             if (e != null) { 
-                g2.drawImage(e.up1, e.x, e.y, gp.tileSize, gp.tileSize, null);
+                g2.drawImage(e.up1, e.x, e.y, e.up1.getWidth(), e.up1.getHeight(), null);
             }
         }
     }
