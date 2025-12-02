@@ -1,17 +1,15 @@
 package main;
 
-import java.awt.Dimension;
+import entity.Aquarium;
+import entity.Player;
 import java.awt.Color;
-
-import javax.imageio.ImageIO;
-import javax.swing.JPanel;
+import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-
-import enity.Player;
-import enity.Aquarium;
-import java.awt.Graphics;
+import javax.imageio.ImageIO;
+import javax.swing.JPanel;
 
 public class GamePanel extends JPanel implements Runnable {
     //screen settings

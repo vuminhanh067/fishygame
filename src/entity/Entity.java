@@ -1,4 +1,4 @@
-package enity;
+package entity;
 
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;

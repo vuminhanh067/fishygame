@@ -1,13 +1,11 @@
-package enity;
+package entity;
 
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
-
 import javax.imageio.ImageIO;
-
 import main.GamePanel;
 
 public class Aquarium extends Entity {
@@ -39,11 +37,11 @@ public class Aquarium extends Entity {
         
         obj.solidArea = new Rectangle(obj.x, obj.y, gp.tileSize, gp.tileSize);
         
-        obj.name = "mer";
+        obj.name = "puff";
         obj.speed = 5;
-        if(obj.direction == "left") {
+        if ("left".equals(obj.direction)) {
             try {
-                obj.up1 = ImageIO.read(getClass().getResourceAsStream("/res/"+ obj.name +"1.png"));
+                obj.up1 = ImageIO.read(getClass().getResourceAsStream("/res/"+ obj.name +"swim1.png"));
             } catch (IOException e) {
                 System.out.println("Lỗi khi tải ảnh thức ăn!");
                 e.printStackTrace();
@@ -51,7 +49,7 @@ public class Aquarium extends Entity {
         } else
         {
             try {
-                obj.up1 = ImageIO.read(getClass().getResourceAsStream("/res/"+ obj.name +"2.png"));
+                obj.up1 = ImageIO.read(getClass().getResourceAsStream("/res/"+ obj.name +"swim2.png"));
             } catch (IOException e) {
                 System.out.println("Lỗi khi tải ảnh thức ăn!");
                 e.printStackTrace();
@@ -75,7 +73,7 @@ public class Aquarium extends Entity {
         for (int i = 0; i < entities.size(); i++) {
             Entity e = entities.get(i);
             if (e != null) {
-                if(e.direction == "left")
+                if ("left".equals(e.direction))
                 {
                     e.x -= e.speed; // Di chuyển sang trái
                     e.solidArea.x = e.x;
