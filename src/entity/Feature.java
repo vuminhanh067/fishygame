@@ -23,6 +23,7 @@ public class Feature {
 
         private void loadImages() {
             try {
+
                 imageLeft = ImageIO.read(getClass().getResourceAsStream("/res/" + name + "swim1.png"));
                 imageRight = ImageIO.read(getClass().getResourceAsStream("/res/" + name + "swim2.png"));
             } catch (IOException | IllegalArgumentException e) {

@@ -13,8 +13,13 @@ public class Player extends Entity {
     MouseHandler mouseH;
     
     // Animation Constants
-    final int SWIM_IDLE_FRAMES = 12; // Cần khai báo lại nếu không thừa kế từ Entity cha đủ
+    final int SWIM_IDLE_FRAMES = 12;
     final int TURN_FRAMES = 6;
+    
+    // Logic Variables for Easing Movement (Sub-pixel precision)
+    // Cần thiết vì Entity.x, Entity.y là int, sẽ làm tròn số gây mất mượt mà khi tốc độ thấp.
+    private double exactX, exactY;
+    private double easing = 0.05; // Hệ số nội suy (5% khoảng cách mỗi frame)
     
     // State variables
     private String currentFacing = "right"; 
@@ -23,25 +28,31 @@ public class Player extends Entity {
         this.gp = gp;
         this.mouseH = mouseH;
         
-        // Khởi tạo mảng frames (QUAN TRỌNG: Phải khởi tạo mảng trước khi load ảnh)
+        // Khởi tạo mảng frames
         idleFrames = new BufferedImage[SWIM_IDLE_FRAMES];
         swimFrames = new BufferedImage[SWIM_IDLE_FRAMES];
         turnFrames = new BufferedImage[TURN_FRAMES];
         
         setDefaultValues();
-        getPlayerImageByLoop(); // Phải gọi hàm này để load ảnh
+        getPlayerImageByLoop(); 
     }
 
     public void setDefaultValues() {
+        // Đặt vị trí ban đầu
         x = gp.screenWidth / 2 - gp.tileSize / 2;
         y = gp.screenHeight / 2 - gp.tileSize / 2;
-        speed = 5;
+        
+        // Đồng bộ hóa tọa độ thực
+        exactX = x;
+        exactY = y;
+
+        speed = 5; // Biến này hiện tại dùng để tham chiếu nếu cần maxSpeed, logic chính dùng easing
         width = 64; 
         height = 64;
         state = "idle";
         direction = "right";
         currentFacing = "right";
-        solidArea = new Rectangle(x, y, width, height);
+        solidArea = new Rectangle((int)x, (int)y, width, height);
     }
 
     public void getPlayerImageByLoop() {
@@ -59,56 +70,69 @@ public class Player extends Entity {
     }
 
     public void update() {
-        // --- 1. MOVEMENT LOGIC (VECTOR) ---
-        double dx = mouseH.mouseX - (x + width / 2);
-        double dy = mouseH.mouseY - (y + height / 2);
-        double distance = Math.sqrt(dx*dx + dy*dy);
+        // --- 1. MOVEMENT LOGIC (LINEAR INTERPOLATION - LERP) ---
+        // Tính vector khoảng cách từ tâm hitbox đến trỏ chuột
+        double centerX = exactX + width / 2.0;
+        double centerY = exactY + height / 2.0;
         
-        boolean isMoving = distance > 10; // Ngưỡng chết để tránh rung lắc
-        String newFacing = currentFacing;
+        double dx = mouseH.mouseX - centerX;
+        double dy = mouseH.mouseY - centerY;
+        
+        // Cập nhật vị trí thực (double) dựa trên hệ số easing
+        // P_new = P_old + (Distance * EasingFactor)
+        exactX += dx * easing;
+        exactY += dy * easing;
 
-        if (isMoving) {
-            // Chuẩn hóa vector và di chuyển
-            double moveX = (dx / distance) * speed;
-            double moveY = (dy / distance) * speed;
-            x += moveX;
-            y += moveY;
+        // Đồng bộ về int để tương thích với hệ thống render/collision cũ
+        x = (int) exactX;
+        y = (int) exactY;
 
-            // Xác định hướng dựa trên dx
-            if (dx > 0) newFacing = "right";
-            else if (dx < 0) newFacing = "left";
+        // --- 2. BOUNDARY CHECK ---
+        // Kiểm tra va chạm biên màn hình
+        if (exactX < 0) exactX = 0;
+        if (exactX > gp.screenWidth - width) exactX = gp.screenWidth - width;
+        if (exactY < 0) exactY = 0;
+        if (exactY > gp.screenHeight - height) exactY = gp.screenHeight - height;
+
+        // Cập nhật lại x, y sau khi check biên
+        x = (int) exactX;
+        y = (int) exactY;
+
+        // --- 3. FACING LOGIC (Vector Direction) ---
+        // Logic quay đầu: Dùng dx để xác định hướng
+        // Thêm ngưỡng (deadzone) 1.0 để tránh lật mặt liên tục khi chuột đứng yên
+        if (Math.abs(dx) > 1.0) {
+            String newFacing = (dx > 0) ? "right" : "left";
+            
+            if (!newFacing.equals(currentFacing)) {
+                state = "turn";
+                currentFacing = newFacing;
+                spriteNum = 0; // Reset animation quay đầu
+            }
         }
 
-        // --- 2. STATE & FACING LOGIC ---
-        // Logic quay đầu (Turn)
-        if (!newFacing.equals(currentFacing)) {
-            state = "turn";
-            currentFacing = newFacing;
-            spriteNum = 0; // Reset animation quay đầu
-        } 
-        
-        // Nếu không đang quay đầu
+        // --- 4. ANIMATION STATE LOGIC ---
+        // Tính độ lớn vector di chuyển trong frame này để xác định trạng thái
+        // Vận tốc thực tế = khoảng cách di chuyển trong 1 frame
+        double velocity = Math.sqrt(dx * easing * dx * easing + dy * easing * dy * easing);
+
         if (!state.equals("turn")) {
-            if (isMoving) {
+            // Nếu vận tốc > 0.5 pixel/frame thì coi như đang bơi
+            if (velocity > 0.5) {
                 state = "swim";
             } else {
                 state = "idle";
             }
         }
 
-        // --- 3. BOUNDARY CHECK ---
-        if(x < 0) x = 0;
-        if(x > gp.screenWidth - width) x = gp.screenWidth - width;
-        if(y < 0) y = 0;
-        if(y > gp.screenHeight - height) y = gp.screenHeight - height;
+        // --- 5. HITBOX UPDATE ---
+        solidArea.x = x;
+        solidArea.y = y;
 
-        // --- 4. HITBOX UPDATE ---
-        solidArea.x = (int)x;
-        solidArea.y = (int)y;
-
-        // --- 5. ANIMATION COUNTER (Rất quan trọng) ---
+        // --- 6. ANIMATION COUNTER ---
         spriteCounter++;
-        int animationSpeed = 4; // Tốc độ chuyển frame
+        // Có thể làm animation nhanh hơn nếu cá bơi nhanh (Optional dynamic framerate)
+        int animationSpeed = 4; 
 
         if (spriteCounter > animationSpeed) {
             spriteNum++;
@@ -117,7 +141,7 @@ public class Player extends Entity {
             if (state.equals("turn")) {
                 if (spriteNum >= TURN_FRAMES) {
                     spriteNum = 0;
-                    state = "swim"; // Quay xong thì bơi tiếp
+                    state = "swim"; // Quay xong -> Bơi
                 }
             } else {
                 // Swim hoặc Idle
@@ -131,12 +155,10 @@ public class Player extends Entity {
     public void draw(Graphics2D g2) {
         BufferedImage currentFrame = null;
 
-        // An toàn: Kiểm tra null array trước khi truy cập
         if (idleFrames == null || swimFrames == null || turnFrames == null) return;
 
-        // Chọn frame
+        // Chọn frame dựa trên state
         if (state.equals("turn")) {
-            // Clamp spriteNum để tránh lỗi ArrayOutOfBounds
             if (spriteNum < TURN_FRAMES) currentFrame = turnFrames[spriteNum];
         } else if (state.equals("swim")) {
             if (spriteNum < SWIM_IDLE_FRAMES) currentFrame = swimFrames[spriteNum];
@@ -151,10 +173,7 @@ public class Player extends Entity {
             AffineTransform oldTransform = g2.getTransform();
             g2.translate(x, y);
 
-            // Logic Flip: Nếu đang nhìn sang phải, lật hình (giả sử ảnh gốc hướng sang trái)
-            // LƯU Ý: Kiểm tra ảnh gốc của bạn. 
-            // Nếu ảnh gốc hướng TRÁI -> code dưới đúng.
-            // Nếu ảnh gốc hướng PHẢI -> xóa logic transform scale(-1,1) hoặc đảo điều kiện.
+            // Logic Flip
             if (currentFacing.equals("right") && !state.equals("turn")) {
                 g2.transform(AffineTransform.getScaleInstance(-1, 1));
                 g2.translate(-targetWidth, 0);
