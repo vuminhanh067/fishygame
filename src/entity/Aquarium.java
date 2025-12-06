@@ -42,7 +42,7 @@ public class Aquarium {
         // Giả sử Level 1 có 3 loại: Minnow, Surgeonfish, Lionfish
         if (types.size() >= 3) {
             if (dice < 60) index = 0;      // 60% ra Minnow
-            else if (dice < 90) index = 1; // 30% ra Surgeonfish
+            else if (dice < 85) index = 1; // 30% ra Surgeonfish
             else index = 2;                // 10% ra Lionfish
         } else {
             index = rand.nextInt(types.size());
@@ -51,7 +51,7 @@ public class Aquarium {
         Feature.MonsterType selectedType = types.get(index);
         
         // Giảm độ khó đầu game: Nếu điểm thấp mà ra Boss -> Đổi thành Minnow
-        if (gp.score < 300 && selectedType.name.equals("lionfish")) {
+        if (gp.score < 500 && selectedType.name.equals("lionfish")) {
             if (rand.nextInt(100) < 90) selectedType = types.get(0);
         }
 

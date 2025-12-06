@@ -1,7 +1,6 @@
 package main;
 
 import entity.Enemy;
-import entity.Entity;
 import entity.Player;
 import java.util.ArrayList;
 
@@ -14,6 +13,10 @@ public class CollisionChecker {
     }
 
     public void checkPlayerVsEnemies(Player player, ArrayList<Enemy> enemies) {
+        
+        // >> QUAN TRỌNG: NẾU ĐANG BẤT TỬ THÌ KHÔNG CHECK
+        if (player.invincible) return;
+
         int pPad = 10;
         player.solidArea.setBounds(player.x + pPad, player.y + pPad, player.width - 2*pPad, player.height - 2*pPad);
 
@@ -51,18 +54,14 @@ public class CollisionChecker {
             gp.lives--;
             gp.aquarium.entities.remove(index); 
             
-            System.out.println("Ouch! Lives left: " + gp.lives);
-            
             if (gp.lives > 0) {
-                // >> TRƯỜNG HỢP 1: CÒN MẠNG -> PAUSE GAME + HIỆN SORRY
-                gp.gameState = gp.pauseState; // Dừng game
-                gp.banner.show("SORRY", 180); // Hiện chữ SORRY trong 2 giây (120 frames)
+                // >> CHUYỂN SANG RESPAWN STATE (Không hiện menu)
+                gp.gameState = gp.respawnState; 
+                gp.banner.show("SORRY", 240); // 4 giây
                 
             } else {
-                // >> TRƯỜNG HỢP 2: HẾT MẠNG -> GAME OVER
                 gp.gameState = gp.gameOverState;
                 gp.banner.show("YOU LOSE", -1); 
-                System.out.println("GAME OVER");
             }
         }
     }

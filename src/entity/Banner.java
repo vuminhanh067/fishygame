@@ -19,7 +19,6 @@ public class Banner {
     
     private final int IMG_WIDTH = 80;
     private final int IMG_HEIGHT = 80;
-    // >> SỬA: Tăng khoảng cách giữa các chữ (10 -> 20)
     private final int SPACING = 20; 
     private final int LETTER_DELAY = 5; 
 
@@ -32,8 +31,6 @@ public class Banner {
         this.visibleCounter = 0;
         this.tick = 0;
         loadImages(text);
-        
-        // Vị trí đích: 1/3 màn hình
         this.targetY = gp.screenHeight / 3.0;
         
         if (images != null) {
@@ -57,8 +54,6 @@ public class Banner {
             for (int i = 0; i < len; i++) {
                 char c = text.charAt(i);
                 if (c == ' ') { images[i] = null; continue; }
-                
-                // Hỗ trợ cả chữ cái và số (File ảnh phải có tên 1.png, 2.png...)
                 String path = "/res/text/" + c + ".png";
                 if (getClass().getResourceAsStream(path) != null) {
                     images[i] = ImageIO.read(getClass().getResourceAsStream(path));
@@ -67,7 +62,6 @@ public class Banner {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    // ... (Hàm update và draw giữ nguyên logic cũ) ...
     public void update() {
         if (!active || letterY == null) return;
         tick++;

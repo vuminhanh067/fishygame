@@ -23,7 +23,7 @@ import javax.swing.JPanel;
 
 public class GamePanel extends JPanel implements Runnable {
     
-    // --- 1. SCREEN & WORLD SETTINGS ---
+    // --- 1. SCREEN & WORLD ---
     public final int screenWidth = 1000;
     public final int screenHeight = 750;
     public final int worldWidth = 1280;
@@ -41,7 +41,8 @@ public class GamePanel extends JPanel implements Runnable {
     public final int playState = 1;
     public final int gameOverState = 2;
     public final int winState = 3;
-    public final int pauseState = 4;
+    public final int pauseState = 4;   // Menu (Bấm M)
+    public final int respawnState = 5; // Hồi sinh (Hiện SORRY)
     
     // --- 4. DATA ---
     public Level currentLevel;
@@ -49,31 +50,24 @@ public class GamePanel extends JPanel implements Runnable {
     public int score = 0;
     public int lives = 3;
 
-    // --- 5. MENU ASSETS & LOGIC ---
+    // --- 5. MENU ASSETS ---
     private BufferedImage menuBg, btnNewGame, btnExit;
     private int menuX, menuY;
-    
-    // Public để MouseHandler truy cập check click
     public Rectangle newGameRect, exitRect; 
-    
-    // Biến điều khiển Animation Menu
-    public int commandNum = -1; // -1: None, 0: NewGame, 1: Exit
-    private int menuTick = 0;   // Đếm thời gian để tạo sóng
+    public int commandNum = -1; 
+    private int menuTick = 0;   
 
     // --- 6. SYSTEM ---
     int FPS = 60;
     public BufferedImage background;
-    
-    // Input Handlers
     public MouseHandler mouseH;
     public KeyHandler keyH;
-    
     public CollisionChecker cChecker = new CollisionChecker(this);
     public Feature feature = new Feature();
     public Banner banner; 
     Thread gameThread;
     
-    // Cursor Management
+    // Cursor
     private Cursor blankCursor;   
     private Cursor defaultCursor; 
     
@@ -87,7 +81,7 @@ public class GamePanel extends JPanel implements Runnable {
         this.setDoubleBuffered(true);
         this.setFocusable(true);
         
-        // Init Input Handlers
+        // Init Inputs
         mouseH = new MouseHandler(this);
         keyH = new KeyHandler(this);
         this.addMouseListener(mouseH);
@@ -101,13 +95,12 @@ public class GamePanel extends JPanel implements Runnable {
         defaultCursor = Cursor.getDefaultCursor();
         BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
         blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImg, new Point(0, 0), "blank cursor");
-        this.setCursor(blankCursor); // Mặc định ẩn
+        this.setCursor(blankCursor);
 
         // Load & Setup
         loadResources();
         setupMenuPositions();
         
-        // Init Entities
         player = new Player(this, mouseH);
         aquarium = new Aquarium(this);
         
@@ -128,15 +121,12 @@ public class GamePanel extends JPanel implements Runnable {
         int bgW = 558; int bgH = 448;
         menuX = (screenWidth - bgW) / 2;
         menuY = (screenHeight - bgH) / 2;
-        
         int centerY = menuY + bgH / 2;
         int ngW = 132; int ngH = 132;
         int exW = 89;  int exH = 89;
         int gap = 60;
-        
         int totalBtnWidth = ngW + gap + exW;
         int startX = menuX + (bgW - totalBtnWidth) / 2;
-        
         newGameRect = new Rectangle(startX, centerY - ngH/2, ngW, ngH);
         exitRect = new Rectangle(startX + ngW + gap, centerY - exH/2, exW, exH);
     }
@@ -175,24 +165,28 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     public void update() {
-        // --- LOGIC CURSOR & MENU ANIMATION ---
+        // --- CURSOR LOGIC ---
         if (gameState == pauseState) {
-            // Hiện chuột khi ở Menu
             if (this.getCursor() != defaultCursor) this.setCursor(defaultCursor);
-            
-            // Tăng biến đếm để tạo sóng cho nút
             menuTick++; 
-            
-            // Cập nhật banner nền (nếu muốn chữ Sorry vẫn nổi lên khi pause)
-            banner.update();
-            return; // Dừng logic game
+            return; 
         } 
         else {
-            // Ẩn chuột khi chơi
             if (this.getCursor() != blankCursor) this.setCursor(blankCursor);
         }
 
         banner.update();
+
+        // --- RESPAWN LOGIC ---
+        if (gameState == respawnState) {
+            // Khi banner SORRY tắt -> Chơi tiếp & Bật bất tử
+            if (!banner.isActive()) {
+                gameState = playState;
+                player.resetPosition();
+                player.enableInvincibility();
+            }
+            return; 
+        }
 
         if (gameState == playState) {
             if (!startBannerShown) {
@@ -201,17 +195,14 @@ public class GamePanel extends JPanel implements Runnable {
 
             player.update();
             
-            // Camera Edge Pushing
+            // Camera Logic
             int marginX = 150; int marginY = 100;
             int playerScreenX = player.x - cameraX;
             int playerScreenY = player.y - cameraY;
-
             if (playerScreenX < marginX) cameraX = player.x - marginX;
             else if (playerScreenX + player.width > screenWidth - marginX) cameraX = (player.x + player.width) - (screenWidth - marginX);
-
             if (playerScreenY < marginY) cameraY = player.y - marginY;
             else if (playerScreenY + player.height > screenHeight - marginY) cameraY = (player.y + player.height) - (screenHeight - marginY);
-
             if (cameraX < 0) cameraX = 0;
             if (cameraY < 0) cameraY = 0;
             if (cameraX > worldWidth - screenWidth) cameraX = worldWidth - screenWidth;
@@ -224,10 +215,6 @@ public class GamePanel extends JPanel implements Runnable {
                 gameState = winState;
                 banner.show("VICTORY", -1);
             }
-        }
-        else if (gameState == pauseState) {
-            // Logic thoát khỏi Pause nếu banner SORRY hết giờ (dành cho trường hợp mất mạng)
-            if (!banner.isActive() && lives > 0) gameState = playState;
         }
     }
 
@@ -265,41 +252,33 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
         
-        // 4. Draw Pause Menu
+        // 4. Draw Menu
         if (gameState == pauseState) {
             drawPauseScreen(g2);
         }
 
-        // 5. Draw Banner
+        // 5. Draw Banner (SORRY, VICTORY, LEVEL 1)
         banner.draw(g2);
         
         g2.dispose();
     }
     
     private void drawPauseScreen(Graphics2D g2) {
-        // Lớp nền tối
         g2.setColor(new Color(0, 0, 0, 150));
         g2.fillRect(0, 0, screenWidth, screenHeight);
         
-        // Vẽ khung Menu
         if (menuBg != null) g2.drawImage(menuBg, menuX, menuY, null);
         
-        // --- TÍNH TOÁN HIỆU ỨNG SÓNG (BOBBING EFFECT) ---
-        // Biên độ 5px, tốc độ 0.1
         int waveOffset = (int)(Math.sin(menuTick * 0.1) * 5); 
 
-        // Vẽ nút New Game
         if (btnNewGame != null) {
             int y = newGameRect.y;
-            // Nếu đang hover (commandNum == 0), cộng thêm sóng
             if (commandNum == 0) y += waveOffset;
             g2.drawImage(btnNewGame, newGameRect.x, y, newGameRect.width, newGameRect.height, null);
         }
         
-        // Vẽ nút Exit
         if (btnExit != null) {
             int y = exitRect.y;
-            // Nếu đang hover (commandNum == 1), cộng thêm sóng
             if (commandNum == 1) y += waveOffset;
             g2.drawImage(btnExit, exitRect.x, y, exitRect.width, exitRect.height, null);
         }
@@ -311,10 +290,5 @@ public class GamePanel extends JPanel implements Runnable {
         g2.drawString("Level: " + currentLevel.levelNum, 20, 40);
         g2.drawString("Score: " + score + " / " + currentLevel.winScore, 20, 70);
         g2.drawString("Lives: " + lives, 20, 100);
-        
-        if (gameState == playState) {
-            g2.setFont(new Font("Arial", Font.ITALIC, 14));
-            g2.drawString("[M] Menu", screenWidth - 100, 40);
-        }
     }
 }
