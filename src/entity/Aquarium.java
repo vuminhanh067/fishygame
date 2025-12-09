@@ -1,8 +1,6 @@
 package entity;
 
 import java.awt.Graphics2D;
-import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Random;
 import main.GamePanel;
@@ -32,7 +30,7 @@ public class Aquarium {
 
     public void spawnEntity() {
         // Lấy danh sách quái từ Level hiện tại
-        ArrayList<Feature.MonsterType> types = gp.currentLevel.monsterTypes;
+        ArrayList<MonsterType> types = gp.currentLevel.monsterTypes;
         if (types == null || types.isEmpty()) return;
 
         // --- Logic Spawn có trọng số (Weighted Random) ---
@@ -48,14 +46,15 @@ public class Aquarium {
             index = rand.nextInt(types.size());
         }
 
-        Feature.MonsterType selectedType = types.get(index);
-        
+        MonsterType selectedType = types.get(index);
+
         // Giảm độ khó đầu game: Nếu điểm thấp mà ra Boss -> Đổi thành Minnow
         if (gp.score < 300 && selectedType.name.equals("lionfish")) {
             if (rand.nextInt(100) < 90) selectedType = types.get(0);
         }
 
-        Enemy monster = gp.feature.createMonster(selectedType, gp);
+        // Tạo Enemy từ MonsterType đã chọn
+        Enemy monster = selectedType.createMonster(gp);
 
         // Random vị trí & hướng
         boolean isRight = rand.nextBoolean();
