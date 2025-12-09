@@ -5,9 +5,8 @@ import javax.imageio.ImageIO;
 
 import main.GamePanel;
 
-public class Feature {
-    
-    public static class MonsterType {
+public class MonsterType extends Entity
+{
         String name;
         String folderPath; // Thư mục chứa ảnh (VD: /res/minnow/)
         int speed;
@@ -50,27 +49,23 @@ public class Feature {
             }
             return frames;
         }
-    }
-    
-    // Hàm factory tạo Entity từ Type
-    public Enemy createMonster(MonsterType type, GamePanel gp) {
-        // >> KHỞI TẠO ENEMY
-        Enemy monster = new Enemy(gp); 
-        
-        monster.name = type.name;
-        monster.speed = type.speed;
-        monster.width = type.width;
-        monster.height = type.height;
-        monster.scoreValue = type.scoreValue;
-        
-        // Copy references
-        monster.swimFrames = type.swimFrames;
-        monster.turnFrames = type.turnFrames;
-        monster.eatFrames = type.eatFrames;   
-        monster.idleFrames = type.idleFrames; 
-        
-        // Setup hitbox
-        monster.solidArea = new java.awt.Rectangle(0, 0, type.width, type.height);
+    public Enemy createMonster(GamePanel gp) {
+        // >> KHỞI TẠO ENEMY từ chính MonsterType này
+        Enemy monster = new Enemy(gp);
+
+        monster.name = this.name;
+        monster.speed = this.speed;
+        monster.width = this.width;
+        monster.height = this.height;
+        monster.scoreValue = this.scoreValue;
+
+        // Copy references to frames
+        monster.swimFrames = this.swimFrames;
+        monster.turnFrames = this.turnFrames;
+        monster.eatFrames = this.eatFrames;
+        monster.idleFrames = this.idleFrames;
+
+        // Setup hitbox based on this type's dimensions
         return monster;
     }
 }

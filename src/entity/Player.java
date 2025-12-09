@@ -19,8 +19,8 @@ public class Player extends Entity {
     final int TURN_FRAMES = 5;
     
     // >> CẬP NHẬT KÍCH THƯỚC GỐC THEO ẢNH, size player
-    final int BASE_WIDTH = 125; 
-    final int BASE_HEIGHT = 105; 
+    final int BASE_WIDTH = 60; 
+    final int BASE_HEIGHT = 48; 
     
     // --- 2. ASSETS ---
     public BufferedImage[] eatFrames;
@@ -183,13 +183,13 @@ public class Player extends Entity {
         // >> LOGIC SCALE MỚI (Dựa trên tính toán diện tích)
         if (gp.score >= 900) {
             newLevel = 3;
-            scale = 1.6; // Size: 200x168 (Area 33,600 > Lionfish 28,640)
+            scale = 1.5; // Size: 90x72 (Area 33,600 > Lionfish 28,640)
         } else if (gp.score >= 300) {
             newLevel = 2;
-            scale = 1.2; // Size: 150x126 (Area 18,900 > Surgeonfish 17,850)
+            scale = 1.25; // Size: 75x60 (Area 18,900 > Surgeonfish 17,850)
         } else {
             newLevel = 1;
-            scale = 1.0; // Size: 125x105 (Area 13,125 > Minnow 3,120)
+            scale = 1.0; // Size: 60x48 (Area 2,880 > Minnow 3,120)
         }
 
         if (newLevel > currentLevel) {

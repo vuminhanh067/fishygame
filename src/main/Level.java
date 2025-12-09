@@ -1,6 +1,6 @@
 package main;
 
-import entity.Feature.MonsterType;
+import entity.MonsterType;
 import java.util.ArrayList;
 
 public class Level {
@@ -21,7 +21,7 @@ public class Level {
             // 1. MINNOW (65x48) - 30 điểm
             // Player gốc (125x105) ăn được
             monsterTypes.add(new MonsterType(
-                "minnow", "/res/minnow/", 2, 65, 48, 30, 
+                "minnow", "/res/minnow/", 2, 48, 30 , 30, 
                 15, 7, 0, 0 
             ));
             
@@ -29,7 +29,7 @@ public class Level {
             // Player gốc (125x105) NHỎ HƠN -> Không ăn được
             // Player Lv2 (150x126) có Diện tích lớn hơn -> Ăn được
             monsterTypes.add(new MonsterType(
-                "surgeonfish", "/res/surgeonfish/", 3, 170, 105, 60, 
+                "surgeonfish", "/res/surgeonfish/", 3, 70, 60, 60, 
                 14, 5, 5, 0 
             ));
             
@@ -37,7 +37,7 @@ public class Level {
             // Player Lv2 (150x126) NHỎ HƠN -> Không ăn được
             // Player Lv3 (200x168) LỚN HƠN -> Ăn được
             monsterTypes.add(new MonsterType(
-                "lionfish", "/res/lionfish/", 4, 179, 160, 150, 
+                "lionfish", "/res/lionfish/", 4, 85, 72, 150, 
                 14, 5, 6, 6 
             ));
         }

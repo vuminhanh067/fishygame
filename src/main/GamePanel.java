@@ -2,7 +2,6 @@ package main;
 
 import entity.Aquarium;
 import entity.Banner;
-import entity.Feature;
 import entity.Player;
 import input.KeyHandler;
 import input.MouseHandler;
@@ -25,8 +24,8 @@ import javax.swing.JPanel;
 public class GamePanel extends JPanel implements Runnable {
     
     // --- 1. SCREEN & WORLD SETTINGS ---
-    public final int screenWidth = 1000;
-    public final int screenHeight = 750;
+    public final int screenWidth = 780;
+    public final int screenHeight = 640;
     public final int worldWidth = 1280;
     public final int worldHeight = 960;
     public final int originalTileSize = 16;
@@ -71,7 +70,6 @@ public class GamePanel extends JPanel implements Runnable {
     Sound sound = new Sound();
     
     public CollisionChecker cChecker = new CollisionChecker(this);
-    public Feature feature = new Feature();
     public Banner banner; 
     Thread gameThread;
     

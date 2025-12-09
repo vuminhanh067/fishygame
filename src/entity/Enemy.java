@@ -1,6 +1,7 @@
 package entity;
 
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.Random;
@@ -17,6 +18,9 @@ public class Enemy extends Entity {
     
     public Enemy(GamePanel gp) {
         this.gp = gp;
+        // Ensure hitbox is always initialized to a safe default.
+        // Specific monster types will overwrite this after creation.
+        this.solidArea = new Rectangle(0, 0, this.width, this.height);
     }
 
     /**

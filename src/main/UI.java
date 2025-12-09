@@ -39,7 +39,7 @@ public class UI extends JPanel {
 
 
     public UI(JFrame window, GamePanel gamePanel){
-        this.setPreferredSize(new Dimension(960, 730));
+        this.setPreferredSize(new Dimension(780, 640));
         this.window = window;
         this.gamePanel = gamePanel;
         
