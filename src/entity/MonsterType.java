@@ -1,6 +1,7 @@
 package entity;
 
 import java.awt.image.BufferedImage;
+import java.awt.Rectangle;
 import javax.imageio.ImageIO;
 
 import main.GamePanel;
@@ -66,6 +67,7 @@ public class MonsterType extends Entity
         monster.idleFrames = this.idleFrames;
 
         // Setup hitbox based on this type's dimensions
+        monster.solidArea = new Rectangle(0, 0, this.width, this.height);
         return monster;
     }
 }
