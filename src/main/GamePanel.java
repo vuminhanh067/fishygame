@@ -253,7 +253,6 @@ public class GamePanel extends JPanel implements Runnable {
             if (score >= currentLevel.winScore) {
                 stopMusic();// stop background music
                 gameState = winState;
-                banner.show("VICTORY", -1);
             }
         }
         else if (gameState == pauseState) {
