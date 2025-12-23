@@ -20,7 +20,7 @@ public class MouseHandler extends MouseAdapter {
         mouseY = e.getY();
         
         // >> LOGIC CHECK HOVER CHO MENU
-        if (gp.gameState == gp.pauseState) {
+        if (gp.gameState == gp.pauseState || gp.gameState == gp.gameOverState) {
             // Kiểm tra New Game
             if (gp.newGameRect != null && gp.newGameRect.contains(mouseX, mouseY)) {
                 gp.commandNum = 0; // Đang chọn New Game
@@ -48,14 +48,16 @@ public class MouseHandler extends MouseAdapter {
     // --- XỬ LÝ CLICK ---
     @Override
     public void mouseClicked(MouseEvent e) {
-        if (gp.gameState == gp.pauseState) {
+        if (gp.gameState == gp.pauseState || gp.gameState == gp.gameOverState) {
             int mx = e.getX();
             int my = e.getY();
             
             if (gp.newGameRect != null && gp.newGameRect.contains(mx, my)) {
                 gp.resetGame();
+                System.out.println("DEBUG: Click New Game");
             }
             else if (gp.exitRect != null && gp.exitRect.contains(mx, my)) {
+                System.out.print("DEBUG: Click Exit");
                 System.exit(0);
             }
         

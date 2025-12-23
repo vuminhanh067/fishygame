@@ -201,23 +201,23 @@ public class Player extends Entity {
         {
             if (gp.score >= 900) {
                 newLevel = 3;
-                scale = 2; // Size: 100x80 (Area 33,600 > Lionfish 28,640)
+                scale = 2; 
             } else if (gp.score >= 300) {
                 newLevel = 2;
-                scale = 1.5; // Size: 75x63 (Area 4,725 > Surgeonfish 17,850)
+                scale = 1.5; 
             } else {
                 newLevel = 1;
-                scale = 1.0; // Size: 50x40 (Area 2000 > Minnow 3120)
+                scale = 1.0; 
             }
         }
         else if(gp.score <= 5000) //level 2 > 2,000 points
         {
-            if (gp.score >= 3500) {
+            if (gp.score >= 3000) {
                 newLevel = 5;
-                scale = 2.5; // Size: 125x100 (Area 18,000 > Clownfish 16,200)
-            } else if (gp.score >= 2200) {
+                scale = 2.0; // Size: 125x100 (Area 18,000 > Clownfish 16,200)
+            } else if (gp.score >= 2400) {
                 newLevel = 4;
-                scale = 2.25; // Size: 113x90 (Area 12,500 > Goldfish 12,000)
+                scale = 1.5; // Size: 113x90 (Area 12,500 > Goldfish 12,000)
             } 
         }
         else //level 3 > 5,000 points

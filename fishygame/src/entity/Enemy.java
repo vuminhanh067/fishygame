@@ -16,6 +16,8 @@ public class Enemy extends Entity {
     public int dy; 
     public int actionLockCounter = 0; 
     
+    public String name = "";
+
     public Enemy(GamePanel gp) {
         this.gp = gp;
         // Ensure hitbox is always initialized to a safe default.
@@ -43,28 +45,57 @@ public class Enemy extends Entity {
     }
 
     private void updateAI() {
+        // Nếu là Level 2 trở lên VÀ là cá barracuda thì dùng logic đuổi
+        if (gp.currentLevel.levelNum >= 2 && "Anglerfish".equals(this.name)) {
+            huntPlayer();
+        } else {
+            // Nếu không phải barracuda hoặc không phải level 2, bơi bình thường
+            normalSwimAI();
+        }
+    }
+    // Tách logic bơi ngẫu nhiên ra hàm riêng
+    private void normalSwimAI() {
         actionLockCounter++;
-        
-        // Random thời gian đổi hướng (30-60 frames)
         int changeTime = 30 + rand.nextInt(30);
 
         if (actionLockCounter >= changeTime) {
-            // Random hướng dọc
             dy = rand.nextInt(3) - 1; 
             
-            // Thi thoảng bơi dọc nhanh hơn (20%)
             if (rand.nextInt(100) < 20) {
                 if (dy > 0) dy = 2; else if (dy < 0) dy = -2;
             }
             
-            // Tỉ lệ 2% tự động quay đầu
             if (rand.nextInt(100) < 2) {
                 startTurning();
             }
-            
             actionLockCounter = 0;
         }
     }
+    
+
+        private void huntPlayer() {
+        double distance = Math.sqrt(Math.pow(gp.player.x - this.x, 2) + Math.pow(gp.player.y - this.y, 2));
+
+        if (distance < 250) {
+            // Logic Đuổi theo
+            if (gp.player.x < this.x && direction.equals("right")) {
+                startTurning(); 
+            } else if (gp.player.x > this.x && direction.equals("left")) {
+                startTurning();
+            }
+            
+            // Tăng tốc nhẹ
+            if (direction.equals("left")) x -= 1; 
+            else x += 1;
+
+            if (gp.player.y > this.y) dy = 1;
+            else if (gp.player.y < this.y) dy = -1;
+        } else {
+            // QUAN TRỌNG: Gọi hàm bơi bình thường, KHÔNG gọi updateAI()
+            normalSwimAI();
+        }
+    }
+
 
     private void updatePosition() {
         // Di chuyển ngang
@@ -114,6 +145,8 @@ public class Enemy extends Entity {
             }
         }
     }
+
+
 
     // Hàm vẽ riêng của Enemy
     public void draw(Graphics2D g2) {

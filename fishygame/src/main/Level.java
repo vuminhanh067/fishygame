@@ -27,15 +27,34 @@ public class Level {
             // 2. SURGEONFISH (75x55) - 60 điểm
             // Player Lv2 (75x63) LỚN HƠN -> Ăn được
             monsterTypes.add(new MonsterType(
-                "surgeonfish", "/res/surgeonfish/", 3, 75, 55, 60, 
+                "surgeonfish", "/res/surgeonfish/", 3, 90, 70, 60, 
                 14, 5, 5, 0 
             ));
             // 3. LIONFISH (90x60) - 90 điểm
             // Player Lv3 (100x80) LỚN HƠN -> Ăn được
             monsterTypes.add(new MonsterType(
-                "lionfish", "/res/lionfish/", 4, 90, 60, 150, 
+                "lionfish", "/res/lionfish/", 4, 140, 120, 150, 
                 14, 5, 6, 6 
             ));
+        } else if( levelNum == 2){
+            this.winScore = 5000;
+
+            monsterTypes.add(new MonsterType(
+                "barracuda", "/res/barracuda/", 2, 50, 35, 30, 
+                14, 5, 0, 0 
+            ));
+
+             monsterTypes.add(new MonsterType(
+                "parrotfish", "/res/parrotfish/", 3, 110, 80, 60, 
+                14, 5, 6, 0 
+            ));
+
+           
+            monsterTypes.add(new MonsterType(
+                "Anglerfish", "/res/Anglerfish/", 4, 140, 120, 150, 
+                15, 5, 6, 7
+            ));
+
         }
     }
 }

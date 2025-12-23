@@ -23,10 +23,10 @@ import javax.swing.JPanel;
 
 public class GamePanel extends JPanel implements Runnable {
     // --- 1. SCREEN & WORLD SETTINGS ---
-    public final int screenWidth = 780;//800
-    public final int screenHeight = 640;//640
-    public final int worldWidth = 1280;
-    public final int worldHeight = 960;
+    public final int screenWidth = 780;
+    public final int screenHeight = 640;
+    public int worldWidth = 1280;
+    public int worldHeight = 960;
     public final int originalTileSize = 16;
     public final int scale = 2;
     public final int tileSize = originalTileSize * scale; 
@@ -36,23 +36,24 @@ public class GamePanel extends JPanel implements Runnable {
     public int cameraY = 0;
 
     // --- 3. GAME STATE ---
-    public int gameState ;
-    //public final int startState = 0;      // Màn hình Logo/Start
-    //public final int instructionState = 5; // Màn hình hướng dẫn (GameIntro)
-    public final int playState = 1;
-    public final int gameOverState = 2;
-    public final int winState = 3;
-    public final int pauseState = 4;
+    public int gameState ; // quyết định game đang ở màn hình nào
+    public final int playState = 1;// đang chơi
+    public final int gameOverState = 2;// thua
+    public final int winState = 3;// vinner
+    public final int pauseState = 4;// tạm dừng
     public final int respawnState = 5;
     
     // --- 4. DATA ---
     public Level currentLevel;
     public boolean startBannerShown = false; 
+    public boolean isGameOverBannerActive = false; // Thêm biến này vào GamePanel
     public int score = 0;
     public int lives = 3;
 
     // --- 5. MENU ASSETS & LOGIC ---
     public BufferedImage menuBg, btnNewGame, btnNewGame2, btnExit2 , btnExit, playerIcon, npc1, npc2, npc3, hudBackground ;
+
+    
     public int menuX, menuY;
     
     // Public để MouseHandler truy cập check click
@@ -65,6 +66,8 @@ public class GamePanel extends JPanel implements Runnable {
     // --- 6. SYSTEM ---
     int FPS = 60;
     public BufferedImage background;
+    public BufferedImage background2;
+    public BufferedImage currentBackground;
     
     // Input Handlers
     public MouseHandler mouseH;
@@ -96,7 +99,7 @@ public class GamePanel extends JPanel implements Runnable {
         this.addMouseMotionListener(mouseH);
         this.addKeyListener(keyH);
         
-        currentLevel = new Level(1);
+        currentLevel = new Level(1); // bắt đầu ở màn 1
         gameState = playState;
 
         // Init Cursors
@@ -114,7 +117,7 @@ public class GamePanel extends JPanel implements Runnable {
         aquarium = new Aquarium(this);
         
         banner = new Banner(this);
-        banner.show("LEVEL 1", 180);
+        banner.show("LEVEL 1", 180);// hiển thị dòng chữ level 1 trong vòng 180 frame (3s)
 
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
         this.setBackground(Color.black);
@@ -126,7 +129,6 @@ public class GamePanel extends JPanel implements Runnable {
 
     private void loadResources() {
         try {
-            background = ImageIO.read(getClass().getResourceAsStream("/res/background.png"));
             menuBg = ImageIO.read(getClass().getResourceAsStream("/res/screen/openAndPause.png"));
             btnNewGame = ImageIO.read(getClass().getResourceAsStream("/res/screen/newgame.png"));
             btnNewGame2 = ImageIO.read(getClass().getResourceAsStream("/res/screen/newgame2.png"));
@@ -137,6 +139,9 @@ public class GamePanel extends JPanel implements Runnable {
             npc2 = ImageIO.read(getClass().getResourceAsStream("/res/surgeonfish/surgeonfishswim6.png"));
             npc3 = ImageIO.read(getClass().getResourceAsStream("/res/lionfish/lionfishidle1.png"));
             hudBackground = ImageIO.read(getClass().getResourceAsStream("/res/screen/menuOcean3.jpg"));
+            background = ImageIO.read(getClass().getResourceAsStream("/res/background.png"));
+            background2 = ImageIO.read(getClass().getResourceAsStream("/res/background2.png"));
+            currentBackground = background;
         } catch (IOException e) { e.printStackTrace(); }
     }
 
@@ -158,7 +163,7 @@ public class GamePanel extends JPanel implements Runnable {
         gameOptionRect = new Rectangle(startX + ngW + gap, centerY - exH/2 + 200, exW, exH);
         playMusic(0);
     }
-
+    // khôi phục toàn bộ trò chơi về trạng thái ban 
     public void resetGame() {
         score = 0;
         lives = 3;
@@ -194,70 +199,125 @@ public class GamePanel extends JPanel implements Runnable {
 
     public void update() {
         // --- LOGIC CURSOR & MENU ANIMATION ---
-        if (gameState == pauseState) {
-            // Hiện chuột khi ở Menu
-            if (this.getCursor() != defaultCursor) this.setCursor(defaultCursor);
+       banner.update();
+
+        if (gameState == playState) {
+            cChecker.checkPlayerVsEnemies(player, aquarium.entities);
+            if (this.getCursor() != blankCursor) this.setCursor(blankCursor);
+            player.update();
+            updateCamera();
+            aquarium.update();
+
+            // Kiểm tra chuyển màn
+            if (currentLevel.levelNum == 1 && score >= currentLevel.winScore) {
+                banner.show("LEVEL COMPLETE", 180);
+                gameState = pauseState;
+                startBannerShown = true;
+                // Sau khi banner này chạy hết, chúng ta mới thực sự gọi nextLevel()
+            }
+           
+            // Nếu đang ở level 2, kiểm tra mốc thắng cuộc để kết thúc game
+            else if (currentLevel.levelNum == 2 && score >= currentLevel.winScore) {
+                gameState = winState;
+                stopMusic();
+            }
+            if(lives <= 0){
+                gameState = gameOverState;
+                isGameOverBannerActive = true; 
+                banner.show("YOU LOSE", 180);
+                stopMusic();
+            }
             
-            // Tăng biến đếm để tạo sóng cho nút
-            menuTick++; 
-            
-            // Cập nhật banner nền (nếu muốn chữ Sorry vẫn nổi lên khi pause)
-            banner.update();
-            return; // Dừng logic game
         }
+         if (gameState == pauseState) {
+            if(startBannerShown){
+                // ĐANG CHỜ CHỮ "LEVEL COMPLETE" CHẠY XONG
+                
+                // Kiểm tra khi nào banner ảnh chữ cái biến mất
+                if (!banner.isActive()) {
+                    startBannerShown = false; // Tắt đánh dấu
+                    nextLevel(); // Chuyển sang Level 2
+                }
+            } else{
+                // ĐÂY LÀ PAUSE MENU BÌNH THƯỜNG (Nhấn ESC hoặc mất mạng)
+                if (this.getCursor() != defaultCursor) this.setCursor(defaultCursor);
+                menuTick++;
 
-        banner.update();
+                // Thoát Pause nếu là banner thông báo mất mạng (Sorry/Respawn)
+                if (!banner.isActive() && lives > 0) gameState = playState;
 
-        if (gameState == respawnState){
+            }
+           
+        } // 4. LOGIC RESPAWN/GAMEOVER (Giữ nguyên của bạn)
+        else if (gameState == respawnState) {
             if (!banner.isActive()) {
                 gameState = playState;
                 player.resetPosition();
                 player.enableInvincibility();
             }
-            return; 
         }
+         
 
-        if (gameState == playState) {
-            if (this.getCursor() != blankCursor) this.setCursor(blankCursor);
-
-            if (!startBannerShown) {
-                if (!banner.isActive()) startBannerShown = true; 
-            }
-
-            player.update();
-            
-            // Camera Logic (edge pushing)
-            int marginX = 150; int marginY = 100;
-            int playerScreenX = player.x - cameraX;
-            int playerScreenY = player.y - cameraY;
-
-            if (playerScreenX < marginX) cameraX = player.x - marginX;
-            else if (playerScreenX + player.width > screenWidth - marginX) cameraX = (player.x + player.width) - (screenWidth - marginX);
-
-            if (playerScreenY < marginY) cameraY = player.y - marginY;
-            else if (playerScreenY + player.height > screenHeight - marginY) cameraY = (player.y + player.height) - (screenHeight - marginY);
-
-            if (cameraX < 0) cameraX = 0;
-            if (cameraY < 0) cameraY = 0;
-            if (cameraX > worldWidth - screenWidth) cameraX = worldWidth - screenWidth;
-            if (cameraY > worldHeight - screenHeight) cameraY = worldHeight - screenHeight;
-
-            aquarium.update();
-            cChecker.checkPlayerVsEnemies(player, aquarium.entities);
-            
-            if (score >= currentLevel.winScore) {
-                currentLevel.levelNum ++;
-                currentLevel = new Level(currentLevel.levelNum);
-                stopMusic();// stop background music
-                gameState = winState;
-            }
-        }
-        else if (gameState == pauseState) {
-            // Logic thoát khỏi Pause nếu banner SORRY hết giờ (dành cho trường hợp mất mạng)
-            if (!banner.isActive() && lives > 0) gameState = playState;
-        }
+       
         else if (gameState == gameOverState) {
-            // Chờ người chơi nhấn New Game trong Menu
+          
+            if (isGameOverBannerActive) {
+                if (!banner.isActive()) {
+                    isGameOverBannerActive = false; // Sau khi xong chữ YOU LOSE, flag này tắt để hiện Menu
+                }
+            }
+            if (this.getCursor() != defaultCursor) {
+                this.setCursor(defaultCursor);
+            }
+        }
+    }
+    // Hàm bổ trợ để code update nhìn sạch hơn
+    public void updateCamera() {
+        int marginX = 150; int marginY = 100;
+        int playerScreenX = player.x - cameraX;
+        int playerScreenY = player.y - cameraY;
+
+        if (playerScreenX < marginX) cameraX = player.x - marginX;
+        else if (playerScreenX + player.width > screenWidth - marginX) cameraX = (player.x + player.width) - (screenWidth - marginX);
+
+        if (playerScreenY < marginY) cameraY = player.y - marginY;
+        else if (playerScreenY + player.height > screenHeight - marginY) cameraY = (player.y + player.height) - (screenHeight - marginY);
+
+        if (cameraX < 0) cameraX = 0;
+        if (cameraY < 0) cameraY = 0;
+        if (cameraX > worldWidth - screenWidth) cameraX = worldWidth - screenWidth;
+        if (cameraY > worldHeight - screenHeight) cameraY = worldHeight - screenHeight;
+    }
+    public void nextLevel() {
+        // Tăng số Level hiện tại lên
+        int nextLvl = currentLevel.levelNum + 1;
+
+        if (nextLvl == 2) {
+            // 1. Khởi tạo dữ liệu Level 2 (Trong Level.java sẽ nạp cá Parrot, Angler, Barracuda)
+            currentLevel = new Level(2); 
+            currentBackground = background2;
+            
+            // 2. Đưa Player về kích thước ban đầu và vị trí mặc định
+            player.setDefaultValues(); 
+            player.resetPosition();
+            cameraX = 0;
+            cameraY = 0;
+            startBannerShown = false;
+            // 3. Xóa toàn bộ cá cũ của Level 1 để cá Level 2 bắt đầu spawn theo tỉ lệ mới
+            aquarium.reset();
+
+            // 4. Hiển thị thông báo chào mừng Level 2
+            banner.show("LEVEL 2", 180);
+
+            // 5. Đảm bảo trạng thái game là đang chơi
+            gameState = playState;
+        
+            System.out.println("Transition to Level 2 successful. Score retained: " + score);
+        } 
+        else {
+            // Nếu thắng Level 2 (không còn level 3), thì mới hiện màn hình Win toàn game
+            gameState = winState;
+            stopMusic();
         }
     }
 
@@ -266,12 +326,13 @@ public class GamePanel extends JPanel implements Runnable {
         Graphics2D g2 = (Graphics2D) g;
 
         // 1. Draw Background
-        if (background != null) {
+        if (currentBackground != null) {
             int sx1 = cameraX; int sy1 = cameraY;
             int sx2 = cameraX + screenWidth; int sy2 = cameraY + screenHeight;
             if (sx2 > worldWidth) sx2 = worldWidth;
             if (sy2 > worldHeight) sy2 = worldHeight;
-            g2.drawImage(background, 0, 0, screenWidth, screenHeight, sx1, sy1, sx2, sy2, null);
+            //g2.drawImage(currentBackground, 0, 0, screenWidth, screenHeight, sx1, sy1, sx2, sy2, null);
+            g2.drawImage(currentBackground, -cameraX, -cameraY, worldWidth, worldHeight, null);
         } else {
             g2.setColor(new Color(0, 100, 200)); 
             g2.fillRect(0, 0, screenWidth, screenHeight);
@@ -286,10 +347,17 @@ public class GamePanel extends JPanel implements Runnable {
         // 4. Draw Pause Menu
         if (gameState == pauseState || gameState == winState || gameState == gameOverState)
         {
-            stopMusic();
-            drawPauseScreen(g2);
-            g2.setFont(new Font("Arial", Font.BOLD, 30));
-            g2.setColor(Color.white);
+            //stopMusic();
+            // Cố định độ trong suốt về 1.0 (Rõ nét 100%) trước khi vẽ Menu
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+            //g2.setFont(new Font("Arial", Font.BOLD, 30));
+            //g2.setColor(Color.white);
+            if (gameState == pauseState) {
+                // CHỈ vẽ Menu Option nếu KHÔNG PHẢI đang trong giai đoạn chuyển màn
+                if (!startBannerShown) {
+                    drawPauseScreen(g2);
+                }
+            }
             if (gameState == winState) {
                 String text = "You Won the Game!";
                 int length = (int)g2.getFontMetrics().getStringBounds(text, g2).getWidth();
@@ -297,11 +365,19 @@ public class GamePanel extends JPanel implements Runnable {
             }
             else if(gameState == gameOverState)
             {
-                String text = "You Lost the Game!";
-                int length = (int)g2.getFontMetrics().getStringBounds(text, g2).getWidth();
-                g2.drawString(text, screenWidth / 2 - length / 2, screenHeight / 2);
+                
+                if (isGameOverBannerActive) {
+                    // Đang chạy hiệu ứng chữ cái YOU LOSE
+                    if (!banner.isActive()) {
+                        // Khi banner ảnh chữ cái kết thúc, mới cho phép hiện Menu thật
+                        isGameOverBannerActive = false; 
+                    }
+                } else {
+                        // Khi banner ảnh đã biến mất, lúc này mới vẽ bảng Menu (New Game / Exit)
+                    drawPauseScreen(g2);
+                }
             }
-            gameState = pauseState;
+           //gameState = pauseState;
         }
 
         // 5. Draw Banner
@@ -398,8 +474,24 @@ public class GamePanel extends JPanel implements Runnable {
         final int TEXT_Y_SUB = HUD_Y + 95;
         final Color FONT_OUTLINE = new Color(0, 0, 0, 180);
         final Color FONT_MAIN = new Color(230, 255, 150, 255);;
-        int npc2Score = 300;
-        int npc3Score = 900;
+        int npc2Score;
+        int npc3Score;
+        BufferedImage currentNpc2, currentNpc3, currentNpc1;
+
+        if (currentLevel.levelNum == 1) {
+            npc2Score = 300;
+            npc3Score = 900;
+            currentNpc1 = npc1;
+            currentNpc2 = npc2; // Cá Surgeonfish (Level 1)
+            currentNpc3 = npc3; // Cá Lionfish (Level 1)
+        } else {
+            // Mốc điểm cho Level 2 (Ví dụ: cần 3000 và 4500 để tiến hóa)
+            npc2Score = 2500; 
+            npc3Score = 4000;
+            currentNpc2 = currentLevel.monsterTypes.get(1).swimFrames[0]; // Cá Angler
+            currentNpc3 = currentLevel.monsterTypes.get(2).swimFrames[0];
+            currentNpc1 = currentLevel.monsterTypes.get(0).swimFrames[0];
+        }
         // VẼ NỀN THANH HUD (GIẢ ĐỊNH)
         g2.drawImage(hudBackground, 0, HUD_Y, screenWidth, HUD_HEIGHT, null);
         
@@ -418,7 +510,7 @@ public class GamePanel extends JPanel implements Runnable {
         
         // B. NPC ICONS (npc1, npc2, npc3)
         final int NPC_BASE_WIDTH = 45;  // Chiều rộng cơ sở (ngang)
-        final int NPC_BASE_HEIGHT = 30; // Chiều cao cơ sở (dọc)
+        final int NPC_BASE_HEIGHT = 35; // Chiều cao cơ sở (dọc)
         final int NPC_GAP = 15; 
         int currentNpcX = x + 40;
         
@@ -427,12 +519,12 @@ public class GamePanel extends JPanel implements Runnable {
         final int size1_H = NPC_BASE_HEIGHT;
         final int npcY1 = TEXT_Y_MAIN - size1_H + 10;
          // npcY1 chỉ tọa độ y bên trái của cá npc1
-        if (npc1 != null) g2.drawImage(npc1, currentNpcX, npcY1, size1_W, size1_H, null);
-        currentNpcX += size1_W + 35;
+        if (npc1 != null) g2.drawImage(currentNpc1, currentNpcX, npcY1, size1_W, size1_H, null);
+        currentNpcX = 135 + (int)((int)(HUD_WIDTH * 0.5) * ((double)npc2Score / currentLevel.winScore)) + 30;
         
         // 2. NPC2 
         Composite originalComposite1 = g2.getComposite();
-        final int size2_W = (int)(NPC_BASE_WIDTH * 1.8);
+        final int size2_W = (int)(NPC_BASE_WIDTH * 1.6);
         final int size2_H = (int)(NPC_BASE_HEIGHT * 1.5);
         final int npcY2 = TEXT_Y_MAIN - size2_H + 15 ; 
         if (score < npc2Score) {
@@ -443,8 +535,8 @@ public class GamePanel extends JPanel implements Runnable {
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
         }
         // Vẽ npc2
-        if (npc2 != null) g2.drawImage(npc2, currentNpcX, npcY2, size2_W, size2_H, null);
-        currentNpcX += size2_W + 60 ;
+        if (npc2 != null) g2.drawImage(currentNpc2, currentNpcX, npcY2, size2_W, size2_H, null);
+        currentNpcX = 135 + (int)((int)(HUD_WIDTH * 0.5) * ((double)npc3Score / currentLevel.winScore))+ 45;
         g2.setComposite(originalComposite1);// reset composite
         
         // 3. NPC3 
@@ -459,30 +551,20 @@ public class GamePanel extends JPanel implements Runnable {
             // Nếu điểm đã đạt: VẼ SÁNG (100% Opacity)
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
         }
-        if (npc3 != null) g2.drawImage(npc3, currentNpcX, npcY3, size3_W, size3_H, null);
+        if (npc3 != null) g2.drawImage(currentNpc3, currentNpcX, npcY3, size3_W, size3_H, null);
         currentNpcX += size3_W + NPC_GAP;
         g2.setComposite(originalComposite1);// reset
-
         // C. SCORE
-        final int SCORE_TEXT_X = (int)(HUD_WIDTH * 0.6); // Vị trí X cố định cho chữ SCORE
+        final int SCORE_TEXT_X = (int)(HUD_WIDTH * 0.7); // Vị trí X cố định cho chữ SCORE
         drawTextWithOutline(g2, "SCORE", SCORE_TEXT_X, TEXT_Y_MAIN, FONT_OUTLINE, FONT_MAIN);
-        
         // VẼ KHUNG ĐIỂM (Dịch sang phải 80px từ chữ SCORE)
         g2.setFont(new Font("Cooper Std Black", Font.BOLD, TEXT_SIZE + 10));
         int scoreBoxX = SCORE_TEXT_X + 120;
         drawTextWithOutline(g2, String.valueOf(score), scoreBoxX, TEXT_Y_MAIN, FONT_OUTLINE, Color.WHITE);
         g2.setFont(new Font("Cooper Std Black", Font.BOLD, TEXT_SIZE));
-
-        
-        // D. MULTIPLIER (3X)
-        // int multiplierX = scoreBoxX + SCORE_BOX_WIDTH + 15; 
-        // g2.setColor(Color.RED);
-        // g2.drawString("3X", multiplierX, TEXT_Y_MAIN + 5);
-        
         // E. GROWTH BAR (Thanh tiến hóa)
-
         int growthBarStartX = 20;
-        int growthBarWidth =(int)(HUD_WIDTH * 0.4); // Chiếm khoảng nửa màn hình
+        int growthBarWidth =(int)(HUD_WIDTH * 0.5); // Chiếm khoảng nửa màn hình
         int barHeight = 15;
         int barY = TEXT_Y_SUB - barHeight;
         int growthBarX = growthBarStartX + 115;
@@ -520,16 +602,16 @@ public class GamePanel extends JPanel implements Runnable {
                    new int[]{barY + barHeight - TRIANGLE_SIZE + 5, barY + barHeight + 10, barY + barHeight + 10}, 3); // Vẽ NPC Icon tại các mốc 
     
         // F. ABILITY BAR (Khả năng đặc biệt)
-        int abilityStartX = (int)(HUD_WIDTH * 0.6);
+        int abilityStartX = SCORE_TEXT_X;
         g2.setColor(Color.WHITE);
         drawTextWithOutline(g2, "LIVE", abilityStartX, TEXT_Y_SUB, FONT_OUTLINE, FONT_MAIN);
         
         // G. LIVES ICONS (Vị trí mạng sống)
-        int livesIconStartX = abilityStartX + 120;
+        int livesIconStartX = abilityStartX + 70;
         final int LIVES_ICON_SIZE = 35; // Icon nhỏ hơn để vừa với vị trí này
         final int LIVES_ICON_Y = barY + (barHeight - LIVES_ICON_SIZE) / 2;
         // Tăng khoảng cách giữa các icon
-        final int LIVES_ICON_GAP = 25;  
+        final int LIVES_ICON_GAP = 15;  
         g2.setColor(Color.WHITE);
         // Vòng lặp tối đa 3 lần (mạng tối đa)
         if (playerIcon != null) {

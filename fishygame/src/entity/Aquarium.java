@@ -36,42 +36,77 @@ public class Aquarium {
         // --- Logic Spawn có trọng số (Weighted Random) ---
         int index = 0;
         int dice = rand.nextInt(100);
-
-        // Giả sử Level 1 có 3 loại: Minnow, Surgeonfish, Lionfish
-        if (types.size() >= 3) {
-            if (dice < 60) index = 0;      // 60% ra Minnow
-            else if (dice < 90) index = 1; // 30% ra Surgeonfish
-            else index = 2;                // 10% ra Lionfish
-        } else {
-            index = rand.nextInt(types.size());
+        
+        if (gp.currentLevel.levelNum == 1){
+               if (types.size() >= 3) {
+                    if (gp.score < 500) {
+                        // Tỉ lệ: 70% con 0, 28% con 1, 2% con 2
+                        if (dice < 70) index = 0;      
+                        else if (dice < 98) index = 1; 
+                        else index = 2;                
+                    } else {
+                        // Tỉ lệ: 50% con 0, 35% con 1, 15% con 2
+                        if (dice < 50) index = 0;      
+                        else if (dice < 85) index = 1; 
+                        else index = 2;                
+                    }
+                }
+            
+        } else if (gp.currentLevel.levelNum == 2) {
+            if (types.size() >= 3) {
+                if(gp.score < 2500){
+                    if (dice < 70) index = 0;      // 50% Barracuda (Con thứ 3 trong danh sách)
+                    else if (dice < 98) index = 1; // 30% Parrotfish (Con thứ 1)
+                    else index = 2;  
+                } else if (gp.score < 3000){
+                    if(dice < 50) index = 0;
+                    if(dice < 85) index = 1;
+                    else index = 2;
+                } else {
+                    if(dice < 60) index = 0;
+                    if(dice < 85) index = 1;
+                    else index = 2;
+                }
+               
+            }
         }
+            
+            MonsterType selectedType = types.get(index);
 
-        MonsterType selectedType = types.get(index);
+            // Tạo Enemy từ MonsterType đã chọn
+            Enemy monster = selectedType.createMonster(gp);
 
-        // Tạo Enemy từ MonsterType đã chọn
-        Enemy monster = selectedType.createMonster(gp);
+            // Random vị trí & hướng
+            boolean isRight = rand.nextBoolean();
+            monster.direction = isRight ? "right" : "left";
+            monster.y = rand.nextInt(gp.worldHeight - monster.height);
+            
+            if (isRight) monster.x = -monster.width;
+            else monster.x = gp.worldWidth;
 
-        // Random vị trí & hướng
-        boolean isRight = rand.nextBoolean();
-        monster.direction = isRight ? "right" : "left";
-        monster.y = rand.nextInt(gp.worldHeight - monster.height);
-        
-        if (isRight) monster.x = -monster.width;
-        else monster.x = gp.worldWidth;
-
-        monster.dy = rand.nextInt(3) - 1; 
-        monster.actionLockCounter = 0;
-        
-        entities.add(monster);
-    }
+            monster.dy = rand.nextInt(3) - 1; 
+            monster.actionLockCounter = 0;
+            
+            entities.add(monster);
+        }
+    
 
     public void update() {
         spawnCounter++;
         // Tốc độ spawn nhanh hơn một chút (50 frames)
-        if (spawnCounter > 50) { 
+        if (spawnCounter > 30) { 
             spawnEntity();
             spawnCounter = 0;
         }
+        //Cứ mỗi 60 frame (1 giây) sẽ thả một đợt cá mới
+        // if (spawnCounter > 60) { 
+        //     // Thả ngẫu nhiên từ 2 đến 4 con cùng một lúc
+        //     int amount = 2 + rand.nextInt(3); 
+        //     for (int i = 0; i < amount; i++) {
+        //         spawnEntity();
+        //     }
+        //     spawnCounter = 0;
+        // }
 
         moveTick++;
         boolean allowMove = (moveTick % SLOW_DOWN_FACTOR == 0);
