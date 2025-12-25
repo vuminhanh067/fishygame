@@ -11,7 +11,7 @@ public class MonsterType extends Entity
         String name;
         String folderPath; // Thư mục chứa ảnh (VD: /res/minnow/)
         int speed;
-        int width, height;
+        public int width, height;
         int scoreValue;
         
         // Mảng chứa animation frames

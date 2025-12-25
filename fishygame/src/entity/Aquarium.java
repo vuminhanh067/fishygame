@@ -60,11 +60,28 @@ public class Aquarium {
                     else index = 2;  
                 } else if (gp.score < 3000){
                     if(dice < 50) index = 0;
-                    if(dice < 85) index = 1;
+                    else if(dice < 70) index = 1;
                     else index = 2;
                 } else {
                     if(dice < 60) index = 0;
-                    if(dice < 85) index = 1;
+                    else if(dice < 85) index = 1;
+                    else index = 2;
+                }
+               
+            }
+        } else if(gp.currentLevel.levelNum == 3){
+            if (types.size() >= 3) {
+                if(gp.score < 5500){
+                    if (dice < 70) index = 0;      // 50% Barracuda (Con thứ 3 trong danh sách)
+                    else if (dice < 98) index = 1; // 30% Parrotfish (Con thứ 1)
+                    else index = 2;  
+                } else if (gp.score < 6300){
+                    if(dice < 50) index = 0;
+                    else if(dice < 70) index = 1;
+                    else index = 2;
+                } else {
+                    if(dice < 60) index = 0;
+                    else  if(dice < 85) index = 1;
                     else index = 2;
                 }
                
@@ -93,21 +110,10 @@ public class Aquarium {
 
     public void update() {
         spawnCounter++;
-        // Tốc độ spawn nhanh hơn một chút (50 frames)
         if (spawnCounter > 30) { 
             spawnEntity();
             spawnCounter = 0;
         }
-        //Cứ mỗi 60 frame (1 giây) sẽ thả một đợt cá mới
-        // if (spawnCounter > 60) { 
-        //     // Thả ngẫu nhiên từ 2 đến 4 con cùng một lúc
-        //     int amount = 2 + rand.nextInt(3); 
-        //     for (int i = 0; i < amount; i++) {
-        //         spawnEntity();
-        //     }
-        //     spawnCounter = 0;
-        // }
-
         moveTick++;
         boolean allowMove = (moveTick % SLOW_DOWN_FACTOR == 0);
 

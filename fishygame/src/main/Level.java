@@ -38,18 +38,29 @@ public class Level {
             ));
         } else if( levelNum == 2){
             this.winScore = 5000;
-
             monsterTypes.add(new MonsterType(
                 "barracuda", "/res/barracuda/", 2, 50, 35, 30, 
                 14, 5, 0, 0 
             ));
-
              monsterTypes.add(new MonsterType(
                 "parrotfish", "/res/parrotfish/", 3, 110, 80, 60, 
                 14, 5, 6, 0 
             ));
+            monsterTypes.add(new MonsterType(
+                "Anglerfish", "/res/Anglerfish/", 4, 140, 120, 150, 
+                15, 5, 6, 7
+            ));
 
-           
+        } else if( levelNum == 3){
+            this.winScore = 10000;
+            monsterTypes.add(new MonsterType(
+                "barracuda", "/res/barracuda/", 2, 50, 35, 30, 
+                14, 5, 0, 0 
+            ));
+             monsterTypes.add(new MonsterType(
+                "shark", "/res/shark/", 3, 110, 80, 60, 
+                14, 5, 6, 0 
+            ));
             monsterTypes.add(new MonsterType(
                 "Anglerfish", "/res/Anglerfish/", 4, 140, 120, 150, 
                 15, 5, 6, 7

@@ -77,15 +77,17 @@ public class Enemy extends Entity {
         double distance = Math.sqrt(Math.pow(gp.player.x - this.x, 2) + Math.pow(gp.player.y - this.y, 2));
 
         if (distance < 250) {
-            // Logic Đuổi theo
-            if (gp.player.x < this.x && direction.equals("right")) {
-                startTurning(); 
-            } else if (gp.player.x > this.x && direction.equals("left")) {
-                startTurning();
+            
+            if (state.equals("swim")) { 
+                if (gp.player.x < this.x && direction.equals("right")) {
+                    startTurning(); 
+                } else if (gp.player.x > this.x && direction.equals("left")) {
+                    startTurning();
+                }
             }
             
             // Tăng tốc nhẹ
-            if (direction.equals("left")) x -= 1; 
+            if (direction.equals("left")) x -= 2 ; 
             else x += 1;
 
             if (gp.player.y > this.y) dy = 1;

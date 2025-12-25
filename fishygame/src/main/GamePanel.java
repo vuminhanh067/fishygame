@@ -67,6 +67,7 @@ public class GamePanel extends JPanel implements Runnable {
     int FPS = 60;
     public BufferedImage background;
     public BufferedImage background2;
+    public BufferedImage background3;
     public BufferedImage currentBackground;
     
     // Input Handlers
@@ -141,6 +142,7 @@ public class GamePanel extends JPanel implements Runnable {
             hudBackground = ImageIO.read(getClass().getResourceAsStream("/res/screen/menuOcean3.jpg"));
             background = ImageIO.read(getClass().getResourceAsStream("/res/background.png"));
             background2 = ImageIO.read(getClass().getResourceAsStream("/res/background2.png"));
+            background3 = ImageIO.read(getClass().getResourceAsStream("/res/backgroung3.png"));
             currentBackground = background;
         } catch (IOException e) { e.printStackTrace(); }
     }
@@ -173,6 +175,7 @@ public class GamePanel extends JPanel implements Runnable {
         banner.show("LEVEL 1", 180);
         startBannerShown = false;
         gameState = playState;
+        currentBackground = background;
     }
 
     public void startGameThread() {
@@ -209,18 +212,19 @@ public class GamePanel extends JPanel implements Runnable {
             aquarium.update();
 
             // Kiểm tra chuyển màn
-            if (currentLevel.levelNum == 1 && score >= currentLevel.winScore) {
-                banner.show("LEVEL COMPLETE", 180);
-                gameState = pauseState;
-                startBannerShown = true;
-                // Sau khi banner này chạy hết, chúng ta mới thực sự gọi nextLevel()
+            if(score >= currentLevel.winScore){
+                if (currentLevel.levelNum < 3) { // Nếu chưa phải level cuối
+                    banner.show("LEVEL COMPLETE", 180);
+                    gameState = pauseState;
+                    startBannerShown = true; 
+                    // startBannerShown = true sẽ kích hoạt nextLevel() trong đoạn logic pauseState bên dưới
+                } else {
+                    // Đã thắng Level 3
+                    gameState = winState;
+                    stopMusic();
+                }
             }
-           
-            // Nếu đang ở level 2, kiểm tra mốc thắng cuộc để kết thúc game
-            else if (currentLevel.levelNum == 2 && score >= currentLevel.winScore) {
-                gameState = winState;
-                stopMusic();
-            }
+            
             if(lives <= 0){
                 gameState = gameOverState;
                 isGameOverBannerActive = true; 
@@ -231,9 +235,7 @@ public class GamePanel extends JPanel implements Runnable {
         }
          if (gameState == pauseState) {
             if(startBannerShown){
-                // ĐANG CHỜ CHỮ "LEVEL COMPLETE" CHẠY XONG
                 
-                // Kiểm tra khi nào banner ảnh chữ cái biến mất
                 if (!banner.isActive()) {
                     startBannerShown = false; // Tắt đánh dấu
                     nextLevel(); // Chuyển sang Level 2
@@ -291,34 +293,27 @@ public class GamePanel extends JPanel implements Runnable {
     public void nextLevel() {
         // Tăng số Level hiện tại lên
         int nextLvl = currentLevel.levelNum + 1;
+        if(nextLvl <= 3){
+            currentLevel = new Level(nextLvl);
+            // Tự động đổi background theo level
+            if (nextLvl == 2) currentBackground = background2;
+            if (nextLvl == 3) currentBackground = background3;
 
-        if (nextLvl == 2) {
-            // 1. Khởi tạo dữ liệu Level 2 (Trong Level.java sẽ nạp cá Parrot, Angler, Barracuda)
-            currentLevel = new Level(2); 
-            currentBackground = background2;
-            
-            // 2. Đưa Player về kích thước ban đầu và vị trí mặc định
             player.setDefaultValues(); 
             player.resetPosition();
-            cameraX = 0;
-            cameraY = 0;
+            cameraX = 0; cameraY = 0;
             startBannerShown = false;
-            // 3. Xóa toàn bộ cá cũ của Level 1 để cá Level 2 bắt đầu spawn theo tỉ lệ mới
             aquarium.reset();
-
-            // 4. Hiển thị thông báo chào mừng Level 2
-            banner.show("LEVEL 2", 180);
-
-            // 5. Đảm bảo trạng thái game là đang chơi
+            
+            banner.show("LEVEL " + nextLvl, 180);
             gameState = playState;
-        
-            System.out.println("Transition to Level 2 successful. Score retained: " + score);
-        } 
-        else {
-            // Nếu thắng Level 2 (không còn level 3), thì mới hiện màn hình Win toàn game
+            startBannerShown = false;
+             System.out.println("Transition to Level" + currentLevel+ " successful. Score retained: " + score);
+        } else {
             gameState = winState;
             stopMusic();
         }
+        
     }
 
     public void paintComponent(Graphics g) {
@@ -474,9 +469,9 @@ public class GamePanel extends JPanel implements Runnable {
         final int TEXT_Y_SUB = HUD_Y + 95;
         final Color FONT_OUTLINE = new Color(0, 0, 0, 180);
         final Color FONT_MAIN = new Color(230, 255, 150, 255);;
-        int npc2Score;
-        int npc3Score;
-        BufferedImage currentNpc2, currentNpc3, currentNpc1;
+        int npc2Score = 0;
+        int npc3Score = 0;
+        BufferedImage currentNpc2 = null, currentNpc3 = null, currentNpc1=null;
 
         if (currentLevel.levelNum == 1) {
             npc2Score = 300;
@@ -484,10 +479,17 @@ public class GamePanel extends JPanel implements Runnable {
             currentNpc1 = npc1;
             currentNpc2 = npc2; // Cá Surgeonfish (Level 1)
             currentNpc3 = npc3; // Cá Lionfish (Level 1)
-        } else {
+        } else if (currentLevel.levelNum == 2) {
             // Mốc điểm cho Level 2 (Ví dụ: cần 3000 và 4500 để tiến hóa)
-            npc2Score = 2500; 
-            npc3Score = 4000;
+            npc2Score = 2400; 
+            npc3Score = 3600;
+            currentNpc2 = currentLevel.monsterTypes.get(1).swimFrames[0]; // Cá Angler
+            currentNpc3 = currentLevel.monsterTypes.get(2).swimFrames[0];
+            currentNpc1 = currentLevel.monsterTypes.get(0).swimFrames[0];
+        } else if (currentLevel.levelNum == 3){
+            // Mốc điểm cho Level 2 (Ví dụ: cần 3000 và 4500 để tiến hóa)
+            npc2Score = 5500; 
+            npc3Score = 7500;
             currentNpc2 = currentLevel.monsterTypes.get(1).swimFrames[0]; // Cá Angler
             currentNpc3 = currentLevel.monsterTypes.get(2).swimFrames[0];
             currentNpc1 = currentLevel.monsterTypes.get(0).swimFrames[0];
@@ -509,8 +511,8 @@ public class GamePanel extends JPanel implements Runnable {
         x += 80; 
         
         // B. NPC ICONS (npc1, npc2, npc3)
-        final int NPC_BASE_WIDTH = 45;  // Chiều rộng cơ sở (ngang)
-        final int NPC_BASE_HEIGHT = 35; // Chiều cao cơ sở (dọc)
+        final int NPC_BASE_WIDTH = 50;  // Chiều rộng cơ sở (ngang)
+        final int NPC_BASE_HEIGHT = 40; // Chiều cao cơ sở (dọc)
         final int NPC_GAP = 15; 
         int currentNpcX = x + 40;
         
@@ -520,12 +522,12 @@ public class GamePanel extends JPanel implements Runnable {
         final int npcY1 = TEXT_Y_MAIN - size1_H + 10;
          // npcY1 chỉ tọa độ y bên trái của cá npc1
         if (npc1 != null) g2.drawImage(currentNpc1, currentNpcX, npcY1, size1_W, size1_H, null);
-        currentNpcX = 135 + (int)((int)(HUD_WIDTH * 0.5) * ((double)npc2Score / currentLevel.winScore)) + 30;
+        currentNpcX = 135 + (int)((int)(HUD_WIDTH * 0.5) * ((double)npc2Score / currentLevel.winScore)) + 20;
         
         // 2. NPC2 
         Composite originalComposite1 = g2.getComposite();
-        final int size2_W = (int)(NPC_BASE_WIDTH * 1.6);
-        final int size2_H = (int)(NPC_BASE_HEIGHT * 1.5);
+        final int size2_W = (int)(NPC_BASE_WIDTH * 1.4);
+        final int size2_H = (int)(NPC_BASE_HEIGHT * 1.3);
         final int npcY2 = TEXT_Y_MAIN - size2_H + 15 ; 
         if (score < npc2Score) {
             // Nếu điểm chưa đạt mốc 300: VẼ MỜ (30% Opacity)
@@ -536,13 +538,13 @@ public class GamePanel extends JPanel implements Runnable {
         }
         // Vẽ npc2
         if (npc2 != null) g2.drawImage(currentNpc2, currentNpcX, npcY2, size2_W, size2_H, null);
-        currentNpcX = 135 + (int)((int)(HUD_WIDTH * 0.5) * ((double)npc3Score / currentLevel.winScore))+ 45;
+        currentNpcX = 135 + (int)((int)(HUD_WIDTH * 0.5) * ((double)npc3Score / currentLevel.winScore))+ 20;
         g2.setComposite(originalComposite1);// reset composite
         
         // 3. NPC3 
         originalComposite1 = g2.getComposite();
-        final int size3_W = (int)(NPC_BASE_WIDTH * 2.2);
-        final int size3_H = (int)(NPC_BASE_HEIGHT * 2);
+        final int size3_W = (int)(NPC_BASE_WIDTH * 1.8);
+        final int size3_H = (int)(NPC_BASE_HEIGHT * 1.6);
         final int npcY3 = TEXT_Y_MAIN - size3_H + 20; 
         if (score < npc3Score) {
         // Nếu điểm chưa đạt mốc 900: VẼ MỜ (30% Opacity)

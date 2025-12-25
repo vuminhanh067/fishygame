@@ -212,7 +212,7 @@ public class Player extends Entity {
         }
         else if(gp.score <= 5000) //level 2 > 2,000 points
         {
-            if (gp.score >= 3000) {
+            if (gp.score >= 3600) {
                 newLevel = 5;
                 scale = 2.0; // Size: 125x100 (Area 18,000 > Clownfish 16,200)
             } else if (gp.score >= 2400) {
@@ -220,14 +220,14 @@ public class Player extends Entity {
                 scale = 1.5; // Size: 113x90 (Area 12,500 > Goldfish 12,000)
             } 
         }
-        else //level 3 > 5,000 points
+        else if(gp.score<=10000)//level 3 > 5,000 points
         {
-            if(gp.score >= 8000) {
+            if(gp.score >= 7500) {
                 newLevel = 7;
-                scale = 3.0; // Size: 150x120 (Area 36,000 > Butterflyfish 28,800)
-            } else if (gp.score >= 6000) {
+                scale = 2.0; // Size: 150x120 (Area 36,000 > Butterflyfish 28,800)
+            } else if (gp.score >= 5500) {
                 newLevel = 6;
-                scale = 2.75; // Size: 138x110 (Area 15,180 > Angelfish 14,400)
+                scale = 1.5; // Size: 138x110 (Area 15,180 > Angelfish 14,400)
             }
         }
         if (newLevel > currentLevel) {
