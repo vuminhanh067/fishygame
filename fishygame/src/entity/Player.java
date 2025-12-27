@@ -7,9 +7,12 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.util.Random;
+
 import javax.imageio.ImageIO;
 import main.GamePanel;
-
+import java.awt.Font;
+import java.awt.Color;
 public class Player extends Entity {
     GamePanel gp;
     MouseHandler mouseH;
@@ -41,6 +44,10 @@ public class Player extends Entity {
     // >> BIẾN BẤT TỬ
     public boolean invincible = false;
     public int invincibleCounter = 0;
+    
+    // Đòn tấn công
+    public int playerBubble = 0;
+    public final int maxPlayerBubble = 50;
     
     public Player(GamePanel gp, MouseHandler mouseH) {
         this.gp = gp;
@@ -77,10 +84,32 @@ public class Player extends Entity {
         exactY = y;
         solidArea = new Rectangle((int)x, (int)y, width, height);
     }
+    // Hàm để bắt đầu trạng thái bất tử
+    public void startInvincibility() {
+        invincible = true;
+        invincibleCounter = 0;
+    }
 
+    // Cập nhật logic bất tử (Gọi hàm này trong Player.update())
+    public void updateInvincibility() {
+        if (invincible) {
+            invincibleCounter++;
+            if (invincibleCounter > 120) {
+                invincible = false;
+                invincibleCounter = 0;
+            }
+        }
+    }
     public void enableInvincibility() {
         invincible = true;
-        invincibleCounter = 180; // 3 giây
+        invincibleCounter = 0; // 3 giây
+    }
+
+    // Hàm để cộng bong bóng an toàn
+    public void collectBubble() {
+        if (playerBubble < maxPlayerBubble) {
+            playerBubble++;
+        }
     }
 
     private void updateSize(double scale) {
@@ -115,10 +144,13 @@ public class Player extends Entity {
     public void update() {
         checkLevelUp();
 
-        if (invincible) {
-            invincibleCounter--;
-            if (invincibleCounter <= 0) invincible = false;
-        }
+        // if (invincible) {
+        //     invincibleCounter++;
+        //     if (invincibleCounter >= 120) {
+        //         invincible = false;
+        //         invincibleCounter = 0;
+        //     }
+        // }
 
         // Movement Logic
         double centerX = exactX + width / 2.0;
@@ -190,6 +222,38 @@ public class Player extends Entity {
             effectCounter--;
             if (effectCounter <= 0) showEffect = false;
         }
+        if (gp.keyH.spacePressed && playerBubble >= 20) {
+            // Kiểm tra playerFacingBoss (Giả sử bạn có logic xác định hướng)
+            fireAttack();
+            gp.keyH.spacePressed = false;
+        } else {
+            gp.keyH.spacePressed = false;
+        }
+        updateInvincibility();
+    }
+    public void fireAttack() {
+        int totalProjectiles = playerBubble; // Bắn hết bóng trong thanh
+        playerBubble = 0; // Reset thanh bubble về 0
+
+        for (int i = 0; i < totalProjectiles; i++) {
+            AttackBubble ab = new AttackBubble(gp);
+            
+            // Vị trí miệng player (giả sử player đang nhìn sang phải/trái)
+            int startX = this.x + (this.width / 2);
+            int startY = this.y + (this.height / 3);
+
+            // Tạo hiệu ứng loe rộng: Góc bắn từ -30 độ đến +30 độ so với hướng nhìn
+            double baseAngle = (direction.equals("left")) ? Math.PI : 0;
+            double spread = Math.toRadians(new Random().nextInt(40) - 20); 
+            double finalAngle = baseAngle + spread;
+            
+            double speed = 5 + new Random().nextDouble() * 4; // Tốc độ ngẫu nhiên
+
+            ab.spawn(startX, startY, finalAngle, speed);
+            gp.playerAttackBubbles.add(ab);
+        }
+        gp.playSE(3); // m thanh bắn
+        System.out.println("Bắn bóng! Số lượng: " + gp.playerAttackBubbles.size());
     }
     
     private void checkLevelUp() {
@@ -220,15 +284,17 @@ public class Player extends Entity {
                 scale = 1.5; // Size: 113x90 (Area 12,500 > Goldfish 12,000)
             } 
         }
-        else if(gp.score<=10000)//level 3 > 5,000 points
+        else if(gp.score < 9000)//level 3 > 5,000 points
         {
-            if(gp.score >= 7500) {
+            if(gp.score >= 6500) {
                 newLevel = 7;
                 scale = 2.0; // Size: 150x120 (Area 36,000 > Butterflyfish 28,800)
             } else if (gp.score >= 5500) {
                 newLevel = 6;
                 scale = 1.5; // Size: 138x110 (Area 15,180 > Angelfish 14,400)
             }
+        } else {
+            scale = 1.0;
         }
         if (newLevel > currentLevel) {
             currentLevel = newLevel;
@@ -257,6 +323,10 @@ public class Player extends Entity {
             AffineTransform oldTransform = g2.getTransform();
             
             if (invincible) {
+
+                if (invincibleCounter % 10 < 5) {
+                    return; // Thoát hàm, không vẽ Player ở frame này
+                }
                 g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.6f));
             }
             
@@ -273,6 +343,28 @@ public class Player extends Entity {
             g2.drawImage(currentFrame, 0, 0, drawWidth, drawHeight, null);
             g2.setTransform(oldTransform);
             
+            // thanh tan cong
+            if (gp.currentLevel.levelNum == 4 && playerBubble > 0) {
+                // 1. THIẾT LẬP TỌA ĐỘ VÀ KÍCH THƯỚC (Nằm trên đầu Player)
+                int barWidth = 40;  
+                int barHeight = 8; 
+                int barX = x + (width / 2) - (barWidth / 2); 
+                int barY = y - 15;  
+                g2.setColor(Color.WHITE);
+                g2.drawRect(barX, barY, barWidth, barHeight);
+
+                g2.setColor(new Color(50, 50, 50, 150));
+                g2.fillRect(barX + 1, barY + 1, barWidth - 1, barHeight - 1);
+
+                g2.setColor(new Color(0, 150, 255));
+                
+                int currentBarWidth = (int)((double)playerBubble / maxPlayerBubble * (barWidth - 1));
+                
+                if (currentBarWidth > 0) {
+                    g2.fillRect(barX + 1, barY + 1, currentBarWidth, barHeight - 1);
+                }
+            }
+            // 1 up
             if (showEffect && upBubble != null) {
             // 1. Cấu hình kích thước mong muốn
             int bubbleSize = 64; 

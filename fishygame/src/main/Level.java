@@ -65,7 +65,9 @@ public class Level {
                 "JohnDory", "/res/JohnDory/", 4, 140, 120, 150, 
                 15, 5, 6, 7
             ));
-
+        } else if( levelNum == 4){
+            this.winScore = 99999;
+            this.monsterTypes.clear();// xoa sach danh sach quai thuong
         }
     }
 }

@@ -57,10 +57,8 @@ public class Enemy extends Entity {
     private void normalSwimAI() {
         actionLockCounter++;
         int changeTime = 30 + rand.nextInt(30);
-
         if (actionLockCounter >= changeTime) {
             dy = rand.nextInt(3) - 1; 
-            
             if (rand.nextInt(100) < 20) {
                 if (dy > 0) dy = 2; else if (dy < 0) dy = -2;
             }
@@ -73,10 +71,10 @@ public class Enemy extends Entity {
     }
     
 
-        private void huntPlayer() {
+    private void huntPlayer() {
         double distance = Math.sqrt(Math.pow(gp.player.x - this.x, 2) + Math.pow(gp.player.y - this.y, 2));
 
-        if (distance < 250) {
+        if (distance < 180) {
             
             if (state.equals("swim")) { 
                 if (gp.player.x < this.x && direction.equals("right")) {

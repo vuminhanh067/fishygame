@@ -6,8 +6,8 @@ import main.GamePanel;
 
 public class KeyHandler extends KeyAdapter {
     
-    private GamePanel gp;
-
+    public GamePanel gp;
+    public boolean spacePressed;
     public KeyHandler(GamePanel gp) {
         this.gp = gp;
     }
@@ -15,7 +15,10 @@ public class KeyHandler extends KeyAdapter {
     @Override
     public void keyPressed(KeyEvent e) {
         int code = e.getKeyCode();
-        
+        if (code == KeyEvent.VK_SPACE) {
+            spacePressed = true;
+            System.out.println("Phím Space đã được nhấn!");
+        }
         // Xử lý phím M (Menu/Pause)
         if (code == KeyEvent.VK_M) {
             if (gp.gameState == gp.playState) {
@@ -25,4 +28,11 @@ public class KeyHandler extends KeyAdapter {
             }
         }
     }
+    // public void keyReleased(KeyEvent e) {
+    //     int code = e.getKeyCode();
+
+    //     if (code == KeyEvent.VK_SPACE) {
+    //         spacePressed = false;
+    //     }
+    // }
 }

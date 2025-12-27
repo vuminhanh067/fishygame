@@ -11,12 +11,12 @@ public class Aquarium {
     
     // Danh sách chứa Enemy
     public ArrayList<Enemy> entities = new ArrayList<>();
-    
+    public Boss finalBoss; // Biến giữ Boss
     // Các biến đếm nội bộ (Internal State)
     private int spawnCounter = 0;
     private int moveTick = 0; 
     final int SLOW_DOWN_FACTOR = 2; 
-
+    
     public Aquarium(GamePanel gp) {
         this.gp = gp;
     }
@@ -26,8 +26,13 @@ public class Aquarium {
         entities.clear();
         spawnCounter = 0;
         moveTick = 0;
+        finalBoss = null;
     }
+    public void spawnBoss() {
+        // Khởi tạo Boss
+        finalBoss = new Boss(gp);
 
+    }
     public void spawnEntity() {
         // Lấy danh sách quái từ Level hiện tại
         ArrayList<MonsterType> types = gp.currentLevel.monsterTypes;
@@ -60,7 +65,7 @@ public class Aquarium {
                     else index = 2;  
                 } else if (gp.score < 3000){
                     if(dice < 50) index = 0;
-                    else if(dice < 70) index = 1;
+                    else if(dice < 85) index = 1;
                     else index = 2;
                 } else {
                     if(dice < 60) index = 0;
@@ -77,7 +82,7 @@ public class Aquarium {
                     else index = 2;  
                 } else if (gp.score < 6300){
                     if(dice < 50) index = 0;
-                    else if(dice < 70) index = 1;
+                    else if(dice < 80) index = 1;
                     else index = 2;
                 } else {
                     if(dice < 60) index = 0;
@@ -109,11 +114,15 @@ public class Aquarium {
     
 
     public void update() {
-        spawnCounter++;
-        if (spawnCounter > 30) { 
-            spawnEntity();
-            spawnCounter = 0;
+        if (gp.currentLevel.levelNum < 4){
+            spawnCounter++;
+            if (spawnCounter > 30) { 
+                spawnEntity();
+                spawnCounter = 0;
+            }
         }
+        
+        
         moveTick++;
         boolean allowMove = (moveTick % SLOW_DOWN_FACTOR == 0);
 
@@ -130,9 +139,17 @@ public class Aquarium {
                 }
             }
         }
-        
+        // 4. CẬP NHẬT RIÊNG CHO BOSS (Nếu đang ở màn Boss)
+        if (gp.currentLevel.levelNum == 4 && finalBoss != null) {
+            finalBoss.update(); // Cập nhật AI và hành động của Boss
+        }
+
         if (moveTick > 1000) moveTick = 0;
-        checkPredatorCollision();
+        // Chỉ check cá ăn nhau nếu không phải màn Boss (hoặc tùy bạn muốn Boss ăn cá con không)
+        if (gp.currentLevel.levelNum < 4) {
+            checkPredatorCollision();
+        }
+        
     }
 
     private void checkPredatorCollision() {
@@ -158,8 +175,16 @@ public class Aquarium {
     }
 
     public void draw(Graphics2D g2) {
+        // if (gp.currentLevel.levelNum == 4) {
+        //     if (finalBoss != null) finalBoss.draw(g2);
+        // } else {
+        //     for (Enemy e : entities) {
+        //         e.draw(g2);
+        //     }
+        //  }
         for (Enemy e : entities) {
-            e.draw(g2);
+                e.draw(g2);
         }
+        
     }
 }
