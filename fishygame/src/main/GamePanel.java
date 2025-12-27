@@ -1,7 +1,11 @@
 package main;
 
 import entity.Aquarium;
+import entity.AttackBubble;
 import entity.Banner;
+import entity.Bomb;
+import entity.Enemy;
+import entity.HeartItem;
 import entity.Player;
 import input.KeyHandler;
 import input.MouseHandler;
@@ -18,9 +22,15 @@ import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.Random;
+import java.awt.Shape;
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
-
+import entity.Boss;
+import entity.RainBubble; // Import class bong bóng của bạn
+import entity.StunBubble;
+import java.awt.geom.AffineTransform;
+import java.util.ArrayList; // Import thư viện danh sách của Java
 public class GamePanel extends JPanel implements Runnable {
     // --- 1. SCREEN & WORLD SETTINGS ---
     public final int screenWidth = 780;
@@ -47,8 +57,9 @@ public class GamePanel extends JPanel implements Runnable {
     public Level currentLevel;
     public boolean startBannerShown = false; 
     public boolean isGameOverBannerActive = false; // Thêm biến này vào GamePanel
-    public int score = 0;
-    public int lives = 3;
+    public int score = 0;//0
+    public double maxHP = 3;
+    public double lives = maxHP;
 
     // --- 5. MENU ASSETS & LOGIC ---
     public BufferedImage menuBg, btnNewGame, btnNewGame2, btnExit2 , btnExit, playerIcon, npc1, npc2, npc3, hudBackground ;
@@ -62,19 +73,30 @@ public class GamePanel extends JPanel implements Runnable {
     // Biến điều khiển Animation Menu
     public int commandNum = -1; // -1: None, 0: NewGame, 1: Exit, 2: GameOption
     private int menuTick = 0;   // Đếm thời gian để tạo sóng
-
+    // mua bong bong 
+    public ArrayList<RainBubble> rainBubbles = new ArrayList<>();
+    public EnvironmentManager envManager = new EnvironmentManager(this);
+    public ArrayList<AttackBubble> playerAttackBubbles = new ArrayList<>();
+    public BufferedImage playerBubbleImg;
+    public ArrayList<StunBubble> bossBubbles = new ArrayList<>();
+    public BufferedImage bossBubbleImg;
+    public ArrayList<Bomb> bombs = new ArrayList<>();
+    public ArrayList<HeartItem> heartItems = new ArrayList<>();
+    public float redOverlayAlpha = 0f; // 0.0 (không đỏ) đến 1.0 (đỏ rực)
+    public ArrayList<BubbleParticle> particles = new ArrayList<>();
     // --- 6. SYSTEM ---
     int FPS = 60;
     public BufferedImage background;
     public BufferedImage background2;
     public BufferedImage background3;
+    public BufferedImage backgroundBoss;
     public BufferedImage currentBackground;
     
     // Input Handlers
     public MouseHandler mouseH;
     public KeyHandler keyH;
     Sound sound = new Sound();
-    
+    public boolean screenShake = false;// mua bubble
     public CollisionChecker cChecker = new CollisionChecker(this);
     public Banner banner; 
     Thread gameThread;
@@ -86,6 +108,11 @@ public class GamePanel extends JPanel implements Runnable {
     // --- 7. ENTITIES ---
     public Player player;
     public Aquarium aquarium;
+    public Boss boss;
+    public boolean showDebug = false; // Chuyển thành false khi muốn ẩn
+    public int level4Timer = 0;
+    public boolean bossSpawned = false;// boss xuất hiện
+    public float screenShakeIntensity = 0; // Độ rung màn hình
 
     public GamePanel() {
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
@@ -115,6 +142,7 @@ public class GamePanel extends JPanel implements Runnable {
         
         // Init Entities
         player = new Player(this, mouseH);
+        boss = new Boss(this);
         aquarium = new Aquarium(this);
         
         banner = new Banner(this);
@@ -143,6 +171,10 @@ public class GamePanel extends JPanel implements Runnable {
             background = ImageIO.read(getClass().getResourceAsStream("/res/background.png"));
             background2 = ImageIO.read(getClass().getResourceAsStream("/res/background2.png"));
             background3 = ImageIO.read(getClass().getResourceAsStream("/res/backgroung3.png"));
+            backgroundBoss = ImageIO.read(getClass().getResourceAsStream("/res/backgroundBoss.png"));
+            playerBubbleImg = ImageIO.read(getClass().getResourceAsStream("/res/animation/attack.png"));
+            bossBubbleImg = ImageIO.read(getClass().getResourceAsStream("/res/animation/stun.png"));
+            //currentBackground = background;
             currentBackground = background;
         } catch (IOException e) { e.printStackTrace(); }
     }
@@ -205,22 +237,144 @@ public class GamePanel extends JPanel implements Runnable {
        banner.update();
 
         if (gameState == playState) {
-            cChecker.checkPlayerVsEnemies(player, aquarium.entities);
+            if (currentLevel.levelNum == 4 && aquarium.finalBoss != null) {
+                level4Timer++;
+                // 1. Mưa rải rác xuất hiện ngay từ đầu và kéo dài mãi mãi
+                if (level4Timer % 45 == 0) { // 45 frames 1 bóng cho thưa
+                    spawnRandomRainBubble();
+                }
+                if (level4Timer >= 600 && level4Timer < 900) {
+                    screenShakeIntensity = 4.0f; // Độ rung
+                     aquarium.finalBoss.alive = true;
+                   
+                } else if( level4Timer >= 900){
+                    screenShakeIntensity = 0;
+                    bossSpawned = true;
+                    // playSE(boss_roar_index); // m thanh Boss xuất hiện
+                } else {
+                    screenShakeIntensity = 0;
+                }
+                 
+                if (aquarium.finalBoss.alive ){
+                     // 1. Check va chạm Player vs Boss
+                    if(bossSpawned){
+                        if (level4Timer % 50 == 0) {
+                            spawnRandomRainBubble();
+                        }
+                         aquarium.finalBoss.updateAttack(); // Gọi đếm giờ bắn của Boss
+                        // Update bóng của Boss
+                        for (int i = 0; i < bossBubbles.size(); i++) {
+                            if (bossBubbles.get(i).alive) bossBubbles.get(i).update();
+                            else { bossBubbles.remove(i); i--; }
+                        }
+                        // 2. Check Boss chết
+                        if (aquarium.finalBoss.currentHP <= 0) {
+                            banner.show("BOSS DEFEATED", 180);
+                            gameState = winState;
+                            score = currentLevel.winScore;
+                            launchFirework(aquarium.finalBoss.x + aquarium.finalBoss.width/2, 
+                   aquarium.finalBoss.y + aquarium.finalBoss.height/2);
+                            stopMusic();
+                            // playMusic(win_sound_index);
+                        }
+                    }
+                    aquarium.finalBoss.update();
+                    cChecker.checkPlayerVsBoss(player, aquarium.finalBoss);
+               
+                }
+                // Check va chạm tổng hợp
+                
+                envManager.update();
+                for (int i = 0; i < rainBubbles.size(); i++) {
+                    RainBubble rb = rainBubbles.get(i);
+                    if (rb.alive) {
+                        rb.update();
+                        
+                    } else {
+                        rainBubbles.remove(i);
+                        i--; // Giảm chỉ số để không bỏ sót phần tử tiếp theo
+                    }
+                }
+
+                // Update bóng tấn công của player
+                for (int i = 0; i < playerAttackBubbles.size(); i++) {
+                    playerAttackBubbles.get(i).update();
+                }
+                for(int i = 0; i < heartItems.size();i++){
+                    HeartItem item = heartItems.get(i);
+                    item.update(); // Gọi update để y tăng lên (rơi xuống)
+
+                    if (!item.active) {
+                        heartItems.remove(i);
+                        i--;
+                    }
+                }
+                for (int i = 0; i < bombs.size(); i++) {
+                    Bomb b = bombs.get(i);
+                    if (b != null) {
+                        b.update(); // Gọi logic nổ và animation
+
+                        // Kiểm tra nếu bom đã nổ xong hoặc rơi khỏi màn hình
+                        if (b.active == false || b.y > screenHeight) {
+                            bombs.remove(i);
+                            i--; // Giảm chỉ số để không bỏ sót phần tử tiếp theo
+                        }
+                    }
+                }
+                // Cập nhật pháo hoa
+                for (int i = 0; i < particles.size(); i++) {
+                    particles.get(i).update();
+                    if (particles.get(i).life <= 0) {
+                        particles.remove(i);
+                        i--;
+                    }
+                }
+
+                // Kiểm tra va chạm tổng hợp
+                cChecker.checkItemCollision(player, aquarium.finalBoss, heartItems);
+                cChecker.checkAllBubbleCollisions(playerAttackBubbles, bossBubbles, rainBubbles, player);
+                cChecker.checkBubblesInteraction(player, aquarium.finalBoss, playerAttackBubbles, rainBubbles);
+                cChecker.checkBubbles(player, aquarium.finalBoss, rainBubbles);
+               
+               
+            } else {
+                 cChecker.checkPlayerVsEnemies(player, aquarium.entities);
+            }
+           
             if (this.getCursor() != blankCursor) this.setCursor(blankCursor);
             player.update();
-            updateCamera();
+            //updateCamera();
             aquarium.update();
-
+            // Chỉ cập nhật Camera nếu KHÔNG PHẢI màn Boss
+            if (currentLevel.levelNum != 4) {
+                updateCamera(); 
+            } else {
+                // Ở màn Boss, ép Camera về vị trí (0,0) hoặc trung tâm
+                cameraX = 0;
+                cameraY = 0;
+            }
+             
             // Kiểm tra chuyển màn
             if(score >= currentLevel.winScore){
+                
                 if (currentLevel.levelNum < 3) { // Nếu chưa phải level cuối
                     banner.show("LEVEL COMPLETE", 180);
                     gameState = pauseState;
                     startBannerShown = true; 
                     // startBannerShown = true sẽ kích hoạt nextLevel() trong đoạn logic pauseState bên dưới
-                } else {
-                    // Đã thắng Level 3
+                } 
+                // TRƯỜNG HỢP 2: Vừa xong Level 3 -> Chuyển sang màn BOSS
+                else if (currentLevel.levelNum == 3) {
+                    banner.show("LEVEL COMPLETE", 180);
+                    gameState = pauseState;
+                    startBannerShown = true; 
+                    // Khi banner này biến mất, hàm nextLevel() sẽ gọi setupBossLevel()
+                } 
+                
+                // TRƯỜNG HỢP 3: Đã thắng Boss (Level 4) -> Thắng toàn bộ game
+                else if (currentLevel.levelNum == 4) {
                     gameState = winState;
+                   
                     stopMusic();
                 }
             }
@@ -235,7 +389,6 @@ public class GamePanel extends JPanel implements Runnable {
         }
          if (gameState == pauseState) {
             if(startBannerShown){
-                
                 if (!banner.isActive()) {
                     startBannerShown = false; // Tắt đánh dấu
                     nextLevel(); // Chuyển sang Level 2
@@ -244,7 +397,6 @@ public class GamePanel extends JPanel implements Runnable {
                 // ĐÂY LÀ PAUSE MENU BÌNH THƯỜNG (Nhấn ESC hoặc mất mạng)
                 if (this.getCursor() != defaultCursor) this.setCursor(defaultCursor);
                 menuTick++;
-
                 // Thoát Pause nếu là banner thông báo mất mạng (Sorry/Respawn)
                 if (!banner.isActive() && lives > 0) gameState = playState;
 
@@ -258,11 +410,7 @@ public class GamePanel extends JPanel implements Runnable {
                 player.enableInvincibility();
             }
         }
-         
-
-       
         else if (gameState == gameOverState) {
-          
             if (isGameOverBannerActive) {
                 if (!banner.isActive()) {
                     isGameOverBannerActive = false; // Sau khi xong chữ YOU LOSE, flag này tắt để hiện Menu
@@ -271,6 +419,12 @@ public class GamePanel extends JPanel implements Runnable {
             if (this.getCursor() != defaultCursor) {
                 this.setCursor(defaultCursor);
             }
+        } else if (gameState == winState){
+            level4Timer++;
+            if(level4Timer%40==0){
+                launchFirework(new Random().nextInt(screenWidth), new Random().nextInt(screenHeight/2));
+            }
+            
         }
     }
     // Hàm bổ trợ để code update nhìn sạch hơn
@@ -304,42 +458,216 @@ public class GamePanel extends JPanel implements Runnable {
             cameraX = 0; cameraY = 0;
             startBannerShown = false;
             aquarium.reset();
-            
+           
             banner.show("LEVEL " + nextLvl, 180);
             gameState = playState;
             startBannerShown = false;
              System.out.println("Transition to Level" + currentLevel+ " successful. Score retained: " + score);
-        } else {
+        } else if (nextLvl == 4){
+            // Thay vì kết thúc, ta chuyển sang màn Boss
+            setupBossLevel();
+        }
+        else {
             gameState = winState;
             stopMusic();
         }
         
+    }
+    public void setupBossLevel() {
+        gameState = playState; // Hoặc tạo một bossState riêng nếu cần logic khác
+        currentLevel = new Level(4); // Màn 4 chính là màn Boss
+        banner.show("FINAL BOSS", 240); // Hiện tên Boss cực ngầu
+        currentBackground = backgroundBoss; // Hình nền tối hơn hoặc đỏ rực
+
+        player.setDefaultValues(); 
+        player.resetPosition();
+        cameraX = 0; cameraY = 0;
+        startBannerShown = false;
+        aquarium.reset();
+        // Gọi hàm spawn Boss riêng ở đây
+         aquarium.spawnBoss();
+    }
+    public void launchFirework(int x, int y) {
+        // Tạo ra 50 hạt bong bóng nhỏ tại vị trí (x, y)
+        for (int i = 0; i < 50; i++) {
+            particles.add(new BubbleParticle(x, y));
+        }
+    }
+    private void spawnRandomRainBubble() {
+        // 1. Tạo vị trí X ngẫu nhiên
+        for(int i = 0; i < 2; i++){
+            int randomX = new Random().nextInt(screenWidth);
+            int startY = -50; // Xuất hiện phía trên màn hình
+            double randomSpeed = 1.0 + (new java.util.Random().nextDouble() * 0.5);
+            
+            int chance = new Random().nextInt(100);
+            if (chance < 5) { 
+                Bomb bomb = new Bomb(this, randomX, startY);
+                bombs.add(bomb);
+            
+            } 
+            else if (chance < 10) {
+                HeartItem heart = new HeartItem(this, randomX, startY);
+                heartItems.add(heart);
+                
+            } else {
+               
+                RainBubble rb = new RainBubble(this, randomX, startY);
+                rb.spawn(randomX, startY, randomSpeed);
+                rainBubbles.add(rb);
+            }
+            
+        }
+       
     }
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
 
-        // 1. Draw Background
+      // --- LỚP 1: HÌNH NỀN (BACKGROUND) ---
         if (currentBackground != null) {
-            int sx1 = cameraX; int sy1 = cameraY;
-            int sx2 = cameraX + screenWidth; int sy2 = cameraY + screenHeight;
-            if (sx2 > worldWidth) sx2 = worldWidth;
-            if (sy2 > worldHeight) sy2 = worldHeight;
-            //g2.drawImage(currentBackground, 0, 0, screenWidth, screenHeight, sx1, sy1, sx2, sy2, null);
-            g2.drawImage(currentBackground, -cameraX, -cameraY, worldWidth, worldHeight, null);
+            if (currentLevel.levelNum == 4) {
+                // Ở màn Boss, vẽ ảnh phủ kín toàn bộ màn hình (Screen), không dùng World size
+                g2.drawImage(currentBackground, 0, 0, screenWidth, screenHeight, null);
+            } else {
+                // Ở màn thường, vẽ theo hệ tọa độ Camera
+                g2.drawImage(currentBackground, -cameraX, -cameraY, worldWidth, worldHeight, null);
+            }
+            } else {
+                g2.setColor(new Color(0, 100, 200)); 
+                g2.fillRect(0, 0, screenWidth, screenHeight);
+            }
+
+        // LƯU TRẠNG THÁI G2 GỐC
+        AffineTransform oldTransform = g2.getTransform();
+        // --- LỚP 2: TÍNH TOÁN ĐỘ RUNG TỔNG HỢP ---
+        int totalShiftX = 0;
+        int totalShiftY = 0;
+        // Trong paintComponent
+        // Rung do Boss xuất hiện (level4Timer)
+        if (currentLevel.levelNum == 4 && level4Timer >= 600 && level4Timer < 900) {
+            float progress = (float)(level4Timer - 600) / 300; // từ 0.0 đến 1.0
+            int vibration = (int)(progress * 10);
+            totalShiftX += new Random().nextInt(vibration + 1) - vibration/2;
+            totalShiftY += new Random().nextInt(vibration + 1) - vibration/2;
+            redOverlayAlpha = (float)(Math.abs(Math.sin(level4Timer * 0.1)) * progress * 0.5f);
         } else {
-            g2.setColor(new Color(0, 100, 200)); 
-            g2.fillRect(0, 0, screenWidth, screenHeight);
+            redOverlayAlpha = 0;
         }
 
-        // 2. Draw Entities
+        // Rung do sự kiện screenShake (ví dụ: bị trúng đòn)
+        if (screenShake) {
+            totalShiftX += new Random().nextInt(11) - 5;
+            totalShiftY += new Random().nextInt(11) - 5;
+        }
+        // Dịch chuyển toàn bộ canvas trước khi vẽ
+        g2.translate(totalShiftX, totalShiftY);
+       // --- LỚP 3: THỰC THỂ GAME (ENTITIES) ---
         aquarium.draw(g2);
+        
+        // VẼ BOSS RIÊNG BIỆT ĐỂ KIỂM SOÁT
+        if (currentLevel.levelNum == 4 && aquarium.finalBoss != null) {
+            // CHỈ VẼ KHI BOSS ĐÃ ĐƯỢC KÍCH HOẠT (từ giây thứ 10 trở đi)
+            if (aquarium.finalBoss.alive) {
+                // Nếu Boss đang trong giai đoạn bơi vào (600-900), ta có thể làm nó mờ ảo một chút
+                if (level4Timer >= 600 && level4Timer < 900) {
+                    float introAlpha = (float)(level4Timer - 600) / 300; // Mờ dần sang rõ
+                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, introAlpha));
+                    aquarium.finalBoss.draw(g2);
+                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+                } else {
+                    // Sau 900 frames, vẽ Boss rõ nét bình thường
+                    aquarium.finalBoss.draw(g2);
+                }
+            }
+        }
         player.draw(g2);
-        drawGameUI(g2);
 
-        // 3. Draw Overlay (Win/Lose)
-        // 4. Draw Pause Menu
+        if (currentLevel.levelNum == 4) {
+            for (int i = 0; i < rainBubbles.size(); i++) {
+                rainBubbles.get(i).draw(g2, envManager.bubbleImg);
+            }
+            for(int i=0;i < bossBubbles.size();i++){
+                bossBubbles.get(i).draw(g2, bossBubbleImg);
+            }
+            for (int i = 0; i < playerAttackBubbles.size(); i++) {
+                playerAttackBubbles.get(i).draw(g2, playerBubbleImg);
+            }
+            for (int i = 0; i < bombs.size(); i++) {
+                if (bombs.get(i) != null) {
+                    bombs.get(i).draw(g2);
+                }
+            }
+            for (int i = 0; i < heartItems.size(); i++) {
+                if (heartItems.get(i) != null) {
+                    heartItems.get(i).draw(g2); // Gọi hàm draw của class HeartItem
+                }
+            }
+        }
+       
+        for (int i = 0; i < particles.size(); i++) {
+            BubbleParticle p = particles.get(i);
+            p.update();
+            p.draw(g2);
+            
+            if (p.life <= 0) {
+                particles.remove(i);
+                i--; // Lùi chỉ số lại sau khi xóa để không bỏ sót hạt tiếp theo
+            }
+        }
+        // --- LỚP 4: LỚP PHỦ MÔI TRƯỜNG (DARK FILTER) ---
+        if (redOverlayAlpha > 0) {
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, redOverlayAlpha));
+            g2.setColor(Color.RED);
+            g2.fillRect(0, 0, screenWidth, screenHeight);
+            // Reset composite về 1.0 ngay lập tức
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+        }
+        envManager.draw(g2);
+         // --- LỚP 5: UI & DEBUG ---
+        g2.setTransform(oldTransform);
+        drawGameUI(g2);
+        // --- VẼ VÙNG VA CHẠM (DEBUG MODE) ---
+
+        if (showDebug) {
+        
+            // 1. Vẽ Hitbox của Player
+            g2.setColor(Color.CYAN); // Màu xanh cho người chơi
+            g2.drawRect(player.solidArea.x, player.solidArea.y, player.solidArea.width, player.solidArea.height);
+
+            // 2. Vẽ Hitbox của các con cá thường (Enemies)
+            g2.setColor(Color.RED); // Màu đỏ cho kẻ địch
+            for (int i = 0; i < aquarium.entities.size(); i++) {
+                Enemy e = aquarium.entities.get(i);
+                if (e != null) {
+                    g2.drawRect(e.solidArea.x, e.solidArea.y, e.solidArea.width, e.solidArea.height);
+                }
+            }
+        }
+        if (showDebug) { // Bạn nên dùng biến boolean để bật/tắt cho tiện
+            g2.setFont(new Font("Arial", Font.PLAIN, 14));
+            g2.setColor(Color.WHITE);
+            
+            // Vẽ nền đen mờ phía sau chữ để dễ đọc hơn trên nền nước xanh
+            g2.setColor(new Color(0, 0, 0, 150));
+            g2.fillRect(10, screenHeight - 100, 200, 80);
+            
+            g2.setColor(Color.WHITE);
+            g2.drawString("Player X: " + player.x, 20, screenHeight - 80);
+            g2.drawString("Player Y: " + player.y, 20, screenHeight - 60);
+            if (aquarium.finalBoss != null) {
+                // Nếu Boss đã được khởi tạo (sau khi gọi spawnBoss)
+                g2.drawString("Boss X: " + (int)aquarium.finalBoss.x, 20, screenHeight - 40);
+                g2.drawString("Boss Y: " + (int)aquarium.finalBoss.y, 20, screenHeight - 20);
+                g2.drawString("Boss Alive: " + aquarium.finalBoss.alive, 20, screenHeight - 10);
+            } else {
+                // Nếu đang ở Level 1, 2, 3 hoặc chưa gọi spawnBoss()
+                g2.setColor(Color.YELLOW);
+                g2.drawString("Boss: [Not Spawned]", 20, screenHeight - 40);
+            }
+        }
+        // --- LỚP 6: MENU & OVERLAY ---
         if (gameState == pauseState || gameState == winState || gameState == gameOverState)
         {
             //stopMusic();
@@ -374,7 +702,7 @@ public class GamePanel extends JPanel implements Runnable {
             }
            //gameState = pauseState;
         }
-
+        
         // 5. Draw Banner
         banner.draw(g2);
         g2.dispose();
@@ -620,16 +948,42 @@ public class GamePanel extends JPanel implements Runnable {
             for (int i = 0; i < 3; i++) {
                 int currentX = livesIconStartX + i * (LIVES_ICON_SIZE + LIVES_ICON_GAP); // 5px gap
                 
-                if (i < lives) {
-                    g2.drawImage(playerIcon, currentX, LIVES_ICON_Y, LIVES_ICON_SIZE, LIVES_ICON_SIZE, null);
+                // --- 1. VẼ PHẦN NỀN MỜ (Đế con cá đã mất) ---
+                // Phần này luôn hiện mờ 0.3f để người chơi biết vị trí mạng tối đa
+                Composite originalComp = g2.getComposite();
+                g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
+                g2.drawImage(playerIcon, currentX, LIVES_ICON_Y, LIVES_ICON_SIZE, LIVES_ICON_SIZE, null);
+                g2.setComposite(originalComp);
+                // --- 2. VẼ PHẦN MÁU CÒN LẠI (Cắt ảnh theo tỉ lệ) ---
+                double portion = 0; // Tỉ lệ phần trăm của icon này cần vẽ
+
+                if (lives >= i + 1) {
+                    portion = 1.0; // Đầy 100%
+                } else if (lives > i) {
+                    portion = lives - i; // Ví dụ: 0.5 mạng còn lại
                 } else {
-                    // Mạng mất: VẼ icon mờ (đã mất)
-                    Composite originalComposite = g2.getComposite();
-                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
-                    g2.drawImage(playerIcon, currentX, LIVES_ICON_Y, LIVES_ICON_SIZE, LIVES_ICON_SIZE, null);
-                    g2.setComposite(originalComposite);
+                    portion = 0; // Mất sạch
                 }
+
+                if (portion > 0) {
+                    // Lưu lại vùng cắt mặc định của toàn bộ màn hình
+                    Shape oldClip = g2.getClip();
+                    
+                    // Tính toán chiều rộng cần vẽ (vơi dần từ phải sang trái)
+                    int drawWidth = (int)(LIVES_ICON_SIZE * portion);
+                    
+                    // Tạo một "chiếc khuôn" hình chữ nhật chỉ bao phủ phần máu còn lại
+                    g2.setClip(currentX, LIVES_ICON_Y, drawWidth, LIVES_ICON_SIZE);
+                    
+                    // Vẽ con cá sáng 100% (chỉ phần nằm trong khuôn mới hiện ra)
+                    g2.drawImage(playerIcon, currentX, LIVES_ICON_Y, LIVES_ICON_SIZE, LIVES_ICON_SIZE, null);
+                    
+                    // Trả lại vùng cắt cũ để không ảnh hưởng đến các icon khác
+                    g2.setClip(oldClip);
+                }
+                
             }
+            
         } 
     }
 
