@@ -13,6 +13,7 @@ public class CollisionChecker {
     }
 
     public void checkPlayerVsEnemies(Player player, ArrayList<Enemy> enemies) {
+        if (player.invincible) return;
         int pPad = 10;
         player.solidArea.setBounds(player.x + pPad, player.y + pPad, player.width - 2*pPad, player.height - 2*pPad);
 
@@ -56,7 +57,7 @@ public class CollisionChecker {
             if (gp.lives > 0) {
                 // >> TRƯỜNG HỢP 1: CÒN MẠNG -> PAUSE GAME + HIỆN SORRY
                 gp.gameState = gp.respawnState; // Dừng game
-                gp.banner.show("SORRY", 180); // Hiện chữ SORRY trong 2 giây (120 frames)
+                gp.banner.show("SORRY!", 180); // Hiện chữ SORRY trong 2 giây (120 frames)
                 
             } else {
                 // >> TRƯỜNG HỢP 2: HẾT MẠNG -> GAME OVER

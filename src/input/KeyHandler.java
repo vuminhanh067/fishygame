@@ -18,7 +18,7 @@ public class KeyHandler extends KeyAdapter {
         
         // Xử lý phím M (Menu/Pause)
         if (code == KeyEvent.VK_M) {
-            if (gp.gameState == gp.playState) {
+            if (gp.gameState == gp.playState || gp.gameState == gp.respawnState) {
                 gp.gameState = gp.pauseState; // Đang chơi -> Pause
             } else if (gp.gameState == gp.pauseState) {
                 gp.gameState = gp.playState; // Đang Pause -> Chơi tiếp

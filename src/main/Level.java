@@ -47,7 +47,7 @@ public class Level {
                 14, 5, 6, 0 
             ));
             monsterTypes.add(new MonsterType(
-                "Anglerfish", "/res/Anglerfish/", 4, 140, 120, 150, 
+                "Anglerfish", "/res/Anglerfish/", -1, 140, 120, 150, 
                 15, 5, 6, 7
             ));
 
@@ -62,7 +62,7 @@ public class Level {
                 14, 5, 6, 0 
             ));
             monsterTypes.add(new MonsterType(
-                "Anglerfish", "/res/Anglerfish/", 4, 140, 120, 150, 
+                "Anglerfish", "/res/Anglerfish/", -1, 140, 120, 150, 
                 15, 5, 6, 7
             ));
 
