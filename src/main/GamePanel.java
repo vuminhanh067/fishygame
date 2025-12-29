@@ -901,7 +901,7 @@ public class GamePanel extends JPanel implements Runnable {
         final int npcY1 = TEXT_Y_MAIN - size1_H + 10;
          // npcY1 chỉ tọa độ y bên trái của cá npc1
         if (npc1 != null) g2.drawImage(currentNpc1, currentNpcX, npcY1, size1_W, size1_H, null);
-        currentNpcX = 135 + (int)((int)(HUD_WIDTH * 0.5) * ((double)npc2Score / currentLevel.winScore)) + 20;
+        currentNpcX = 135 + (int)((int)(HUD_WIDTH * 0.5) * ((double)npc2Score / currentLevel.winScore)) + 10;
         
         // 2. NPC2 
         Composite originalComposite1 = g2.getComposite();
@@ -917,7 +917,7 @@ public class GamePanel extends JPanel implements Runnable {
         }
         // Vẽ npc2
         if (npc2 != null) g2.drawImage(currentNpc2, currentNpcX, npcY2, size2_W, size2_H, null);
-        currentNpcX = 135 + (int)((int)(HUD_WIDTH * 0.5) * ((double)npc3Score / currentLevel.winScore))+ 20;
+        currentNpcX = 135 + (int)((int)(HUD_WIDTH * 0.5) * ((double)npc3Score / currentLevel.winScore))+ 10;
         g2.setComposite(originalComposite1);// reset composite
         
         // 3. NPC3 
@@ -929,7 +929,7 @@ public class GamePanel extends JPanel implements Runnable {
         // Nếu điểm chưa đạt mốc 900: VẼ MỜ (30% Opacity)
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
         } else {
-            // Nếu điểm đã đạt: VẼ SÁNG (100% Opacity)
+            // Nếu điểm đã đạt: VẼ SÁNG (100% Opacty)
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
         }
         if (npc3 != null) g2.drawImage(currentNpc3, currentNpcX, npcY3, size3_W, size3_H, null);

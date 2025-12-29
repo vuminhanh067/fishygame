@@ -112,8 +112,8 @@ public class Enemy extends Entity {
         if (y > gp.worldHeight - height) { y = gp.worldHeight - height; dy = -1; }
         
         // Chạm biên ngang -> Quay đầu
-        if (x <= 0 && direction.equals("left")) startTurning();
-        if (x >= gp.worldWidth - width && direction.equals("right")) startTurning();
+        //if (x <= 0 && direction.equals("left")) startTurning();
+        //if (x >= gp.worldWidth - width && direction.equals("right")) startTurning();
 
         // Update Hitbox
         solidArea.x = x;
