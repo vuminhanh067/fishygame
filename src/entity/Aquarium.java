@@ -47,12 +47,12 @@ public class Aquarium {
                     if (gp.score < 500) {
                         // Tỉ lệ: 70% con 0, 28% con 1, 2% con 2
                         if (dice < 70) index = 0;      
-                        else if (dice < 95) index = 1; 
+                        else if (dice < 90) index = 1; 
                         else index = 2;                
                     } else {
                         // Tỉ lệ: 50% con 0, 35% con 1, 15% con 2
                         if (dice < 50) index = 0;      
-                        else if (dice < 85) index = 1; 
+                        else if (dice < 80) index = 1; 
                         else index = 2;                
                     }
                 }
@@ -63,22 +63,26 @@ public class Aquarium {
                     if (dice < 70) index = 0;      // 50% Barracuda (Con thứ 3 trong danh sách)
                     else if (dice < 90) index = 1; // 30% Parrotfish (Con thứ 1)
                     else index = 2;  
-                } else if (gp.score < 3000){
+                } else if(gp.score < 3500) {
                     if(dice < 50) index = 0;
                     else if(dice < 80) index = 1;
                     else index = 2;
-                } 
+                } else {
+                    if(dice < 50) index = 0;
+                    else if (dice < 70) index = 1;
+                    else index = 2;
+                }
                
             }
         } else if(gp.currentLevel.levelNum == 3){
             if (types.size() >= 3) {
                 if(gp.score < 5500){
                     if (dice < 70) index = 0;      // 50% Barracuda (Con thứ 3 trong danh sách)
-                    else if (dice < 85) index = 1; // 30% Parrotfish (Con thứ 1)
+                    else if (dice < 90) index = 1; // 30% Parrotfish (Con thứ 1)
                     else index = 2;  
                 } else if (gp.score < 6300){
                     if(dice < 50) index = 0;
-                    else if(dice < 70) index = 1;
+                    else if(dice < 75) index = 1;
                     else index = 2;
                 } else {
                     if(dice < 60) index = 0;
