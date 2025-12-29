@@ -43,27 +43,27 @@ public class Level {
                 14, 5, 0, 0 
             ));
              monsterTypes.add(new MonsterType(
-                "parrotfish", "/res/parrotfish/", 3, 110, 80, 60, 
+                "parrotfish", "/res/parrotfish/", 3, 90, 60, 60, 
                 14, 5, 6, 0 
             ));
             monsterTypes.add(new MonsterType(
-                "Anglerfish", "/res/Anglerfish/", 4, 140, 120, 150, 
-                15, 5, 6, 7
+                "shark", "/res/shark/", 4, 170, 100, 150, 
+                14, 5, 6, 0
             ));
 
         } else if( levelNum == 3){
-            this.winScore = 8000;
+            this.winScore = 10000;
             monsterTypes.add(new MonsterType(
-                "Tuna", "/res/Tuna/", 2, 50, 35, 30, 
-                15, 5, 5, 0 
+                "Tuna", "/res/Tuna/", 2, 50, 35, 70, 
+                15, 5, 6, 0 
             ));
              monsterTypes.add(new MonsterType(
-                "Pufferfish", "/res/Pufferfish/", 3, 110, 80, 60, 
-                15, 5, 6, 7
+                "Pufferfish", "/res/Pufferfish/", 3, 90, 75, 150, 
+                15, 2, 7, 7
             ));
             monsterTypes.add(new MonsterType(
-                "JohnDory", "/res/JohnDory/", 4, 140, 120, 150, 
-                15, 5, 6, 7
+                "JohnDory", "/res/JohnDory/", 4, 140, 125, 250, 
+                15, 5, 6, 0
             ));
         } else if( levelNum == 4){
             this.winScore = 99999;

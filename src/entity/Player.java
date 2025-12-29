@@ -94,7 +94,7 @@ public class Player extends Entity {
     public void updateInvincibility() {
         if (invincible) {
             invincibleCounter++;
-            if (invincibleCounter > 120) {
+            if (invincibleCounter > 180) {
                 invincible = false;
                 invincibleCounter = 0;
             }
@@ -229,6 +229,12 @@ public class Player extends Entity {
         } else {
             gp.keyH.spacePressed = false;
         }
+        int mouse = gp.mouseH.mouseX;
+        if (mouse < this.x + (this.width / 2)) {
+            direction = "left";
+        } else {
+            direction = "right";
+        }
         updateInvincibility();
     }
     public void fireAttack() {
@@ -241,9 +247,14 @@ public class Player extends Entity {
             // Vị trí miệng player (giả sử player đang nhìn sang phải/trái)
             int startX = this.x + (this.width / 2);
             int startY = this.y + (this.height / 3);
-
+            double baseAngle;
+            switch (direction) {
+                case "left":  baseAngle = Math.PI; break;      // 180 độ
+                case "right": baseAngle = 0; break;            // 0 độ
+                default:      baseAngle = 0;
+            }
             // Tạo hiệu ứng loe rộng: Góc bắn từ -30 độ đến +30 độ so với hướng nhìn
-            double baseAngle = (direction.equals("left")) ? Math.PI : 0;
+            //double baseAngle = (direction.equals("left")) ? Math.PI : 0;
             double spread = Math.toRadians(new Random().nextInt(40) - 20); 
             double finalAngle = baseAngle + spread;
             
@@ -284,9 +295,9 @@ public class Player extends Entity {
                 scale = 1.5; // Size: 113x90 (Area 12,500 > Goldfish 12,000)
             } 
         }
-        else if(gp.score < 9000)//level 3 > 5,000 points
+        else if(gp.score < 10000)//level 3 > 5,000 points
         {
-            if(gp.score >= 6500) {
+            if(gp.score >= 7500) {
                 newLevel = 7;
                 scale = 2.0; // Size: 150x120 (Area 36,000 > Butterflyfish 28,800)
             } else if (gp.score >= 5500) {

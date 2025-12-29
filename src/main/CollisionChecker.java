@@ -41,6 +41,7 @@ public class CollisionChecker {
 
             if (player.solidArea.intersects(enemy.solidArea)) {
                 processCollision(player, enemy, i);
+                gp.playSE(3);
             }
         }
     }
@@ -119,6 +120,7 @@ public class CollisionChecker {
                 // Đảm bảo sau khi văng không bị ra ngoài màn hình
             if (player.x < 50) player.x = 50;
             if (player.x > gp.screenWidth - 100) player.x = gp.screenWidth - 100;
+
             player.startInvincibility(); // Hàm giúp player nhấp nháy/bất tử tạm thời
             gp.playSE(3); // Âm thanh va chạm
             
@@ -221,7 +223,7 @@ public class CollisionChecker {
             }
         }
 
-        // DUYỆT BÓNG TẤN CÔNG CÒN LẠI ĐỂ G Y DAMAGE CHO BOSS
+        // DUYỆT BÓNG TẤN CÔNG CÒN LẠI ĐỂ GAY DAMAGE CHO BOSS
         for (AttackBubble pb : pBubbles) {
             if (pb.alive && boss.solidArea.intersects(pb.solidArea)) {
                 pb.alive = false;

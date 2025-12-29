@@ -193,9 +193,9 @@ public class GamePanel extends JPanel implements Runnable {
             npc3 = ImageIO.read(getClass().getResourceAsStream("/res/lionfish/lionfishidle1.png"));
             hudBackground = ImageIO.read(getClass().getResourceAsStream("/res/screen/menuOcean3.jpg"));
             background = ImageIO.read(getClass().getResourceAsStream("/res/background.png"));
-            background2 = ImageIO.read(getClass().getResourceAsStream("/res/background2.png"));
+            backgroundBoss = ImageIO.read(getClass().getResourceAsStream("/res/background2.png"));
             background3 = ImageIO.read(getClass().getResourceAsStream("/res/backgroung3.png"));
-            backgroundBoss = ImageIO.read(getClass().getResourceAsStream("/res/backgroundBoss.png"));
+            background2 = ImageIO.read(getClass().getResourceAsStream("/res/backgroundBoss.png"));
             playerBubbleImg = ImageIO.read(getClass().getResourceAsStream("/res/animation/attack.png"));
             bossBubbleImg = ImageIO.read(getClass().getResourceAsStream("/res/animation/stun.png"));
 
@@ -437,8 +437,8 @@ public class GamePanel extends JPanel implements Runnable {
         else if (gameState == respawnState) {
             if (!banner.isActive()) {
                 gameState = playState;
-                player.resetPosition();
-                player.enableInvincibility();
+                player.resetPosition();// bug
+                player.enableInvincibility();// bug
             }
         }
         else if (gameState == gameOverState) {
@@ -512,7 +512,7 @@ public class GamePanel extends JPanel implements Runnable {
         }
         else {
             gameState = winState;
-            isVictoryBannerActive = true; // Bật cờ banner chiến thắng
+            //isVictoryBannerActive = true; // Bật cờ banner chiến thắng
             banner.show("VICTORY!", 300); // Hiện chữ VICTORY trong 5 giây (60*5)
             
             music.stopAll();

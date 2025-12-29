@@ -73,7 +73,7 @@ public class Bomb extends Entity {
         int centerY = this.y + (height / 2);
         // kiểm tra boss
         if (this.solidArea.intersects(gp.aquarium.finalBoss.solidArea)) {
-            gp.aquarium.finalBoss.currentHP -= 5;
+            gp.aquarium.finalBoss.currentHP -= 7;
             //System.out.println("Boss trung bom: -10HP");
         } else if (gp.aquarium.finalBoss != null && gp.aquarium.finalBoss.alive) {
             double distToBoss = getDistance(centerX, centerY, 
@@ -81,7 +81,7 @@ public class Bomb extends Entity {
                 gp.aquarium.finalBoss.y + gp.aquarium.finalBoss.height/2);
             
             if (distToBoss <= radius) {
-                gp.aquarium.finalBoss.currentHP -= 10;
+                gp.aquarium.finalBoss.currentHP -= 7;
                 //System.out.println("-hpboss");
             }
         }

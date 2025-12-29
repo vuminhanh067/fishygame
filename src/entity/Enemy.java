@@ -46,8 +46,10 @@ public class Enemy extends Entity {
 
     private void updateAI() {
         // Nếu là Level 2 trở lên VÀ là cá barracuda thì dùng logic đuổi
-        if (gp.currentLevel.levelNum >= 2 && "Anglerfish".equals(this.name)) {
-            huntPlayer();
+        if (gp.currentLevel.levelNum >= 2) {
+            if("Anglerfish".equals(this.name) || "shark".equals(this.name) || "JohnDory".equals(this.name)){
+                 huntPlayer();
+            }
         } else {
             // Nếu không phải barracuda hoặc không phải level 2, bơi bình thường
             normalSwimAI();
