@@ -43,74 +43,84 @@ public class Aquarium {
         int dice = rand.nextInt(100);
         
         if (gp.currentLevel.levelNum == 1){
-               if (types.size() >= 3) {
+                if (types.size() >= 3) {
                     if (gp.score < 500) {
-                        // Tỉ lệ: 70% con 0, 28% con 1, 2% con 2
+                        // Tỉ lệ: 70% con 0, 25% con 1, 5% con 2
                         if (dice < 70) index = 0;      
-                        else if (dice < 90) index = 1; 
+                        else if (dice < 95) index = 1; 
                         else index = 2;                
-                    } else {
+                    } else if (gp.score < 1000) {
                         // Tỉ lệ: 50% con 0, 35% con 1, 15% con 2
                         if (dice < 50) index = 0;      
-                        else if (dice < 80) index = 1; 
+                        else if (dice < 85) index = 1; 
                         else index = 2;                
                     }
+                    else {
+                        // Tỉ lệ: 30% con 0, 40% con 1, 30% con 2
+                        if (dice < 30) index = 0;      
+                        else if (dice < 70) index = 1; 
+                        else index = 2;
+                    }
                 }
-            
         } else if (gp.currentLevel.levelNum == 2) {
             if (types.size() >= 3) {
                 if(gp.score < 2500){
-                    if (dice < 70) index = 0;      // 50% Barracuda (Con thứ 3 trong danh sách)
-                    else if (dice < 90) index = 1; // 30% Parrotfish (Con thứ 1)
+                    // 70% Con thứ 2 trong danh sách, 20% Con thứ 0, 10% Con thứ 1
+                    if (dice < 70) index = 0;
+                    else if (dice < 90) index = 1;
                     else index = 2;  
-                } else if(gp.score < 3500) {
+                } else if (gp.score < 3000){
+                    // 50% Con thứ 2 trong danh sách, 30% Con thứ 0, 20% Con thứ 1  
                     if(dice < 50) index = 0;
                     else if(dice < 80) index = 1;
                     else index = 2;
-                } else {
-                    if(dice < 50) index = 0;
-                    else if (dice < 70) index = 1;
+                }
+                else {
+                    // 30% Con thứ 2 trong danh sách, 35% Con thứ 0, 35% Con thứ 1
+                    if(dice < 30) index = 0;
+                    else  if(dice < 65) index = 1;
                     else index = 2;
                 }
-               
             }
         } else if(gp.currentLevel.levelNum == 3){
             if (types.size() >= 3) {
                 if(gp.score < 5500){
-                    if (dice < 70) index = 0;      // 50% Barracuda (Con thứ 3 trong danh sách)
-                    else if (dice < 90) index = 1; // 30% Parrotfish (Con thứ 1)
+                    // 60% Barracuda (Con thứ 3 trong danh sách), 20% Parrotfish (Con thứ 1), 20% Grouper (Con thứ 2)
+                    if (dice < 60) index = 0;
+                    else if (dice < 80) index = 1;
                     else index = 2;  
                 } else if (gp.score < 6300){
-                    if(dice < 50) index = 0;
-                    else if(dice < 75) index = 1;
+                    // 40% Barracuda (Con thứ 3 trong danh sách), 30% Parrotfish (Con thứ 1), 30% Grouper (Con thứ 2)
+                    if(dice < 40) index = 0;
+                    else if(dice < 70) index = 1;
                     else index = 2;
                 } else {
-                    if(dice < 60) index = 0;
-                    else  if(dice < 85) index = 1;
+                    // 20% Barracuda (Con thứ 3 trong danh sách), 35% Parrotfish (Con thứ 1), 45% Grouper (Con thứ 2)
+                    if(dice < 20) index = 0;
+                    else  if(dice < 55) index = 1;
                     else index = 2;
                 }
-               
             }
         }
-            
-            MonsterType selectedType = types.get(index);
+        
+        MonsterType selectedType = types.get(index);
 
-            // Tạo Enemy từ MonsterType đã chọn
-            Enemy monster = selectedType.createMonster(gp);
+        // Tạo Enemy từ MonsterType đã chọn
+        Enemy monster = selectedType.createMonster(gp);
 
-            // Random vị trí & hướng
-            boolean isRight = rand.nextBoolean();
-            monster.direction = isRight ? "right" : "left";
-            monster.y = rand.nextInt(gp.worldHeight - monster.height);
-            
-            if (isRight) monster.x = -monster.width;
-            else monster.x = gp.worldWidth;
+        // Random vị trí & hướng
+        boolean isRight = rand.nextBoolean();
+        monster.direction = isRight ? "right" : "left";
+        monster.y = rand.nextInt(gp.worldHeight - monster.height);
+        
+        if (isRight) monster.x = -monster.width;
+        else monster.x = gp.worldWidth;
 
-            monster.dy = rand.nextInt(3) - 1; 
-            monster.actionLockCounter = 0;
-            
-            entities.add(monster);
-        }
+        monster.dy = rand.nextInt(3) - 1; 
+        monster.actionLockCounter = 0;
+        
+        entities.add(monster);
+    }
     
 
     public void update() {
@@ -182,7 +192,7 @@ public class Aquarium {
         //         e.draw(g2);
         //     }
         //  }
-       for (int i = 0; i < entities.size(); i++) {
+        for (int i = 0; i < entities.size(); i++) {
         Enemy e = entities.get(i);
             if (e != null) {
                 e.draw(g2);
